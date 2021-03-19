@@ -1,0 +1,129 @@
+heatmap_ressss: {
+    "data": {
+        "nodes": {
+            "0": {
+                "count": 1,
+                "distance": 0,
+                "parent": 5,
+                "objects": [
+                    "gen_1"
+                ],
+                "features": [
+                    5.1,
+                    3.5,
+                    1.4,
+                    0.2
+                ]
+            },
+            "1": {
+                "count": 1,
+                "distance": 0,
+                "parent": 6,
+                "objects": [
+                    "gen_2"
+                ],
+                "features": [
+                    4.9,
+                    3.0,
+                    4.5,
+                    1.4
+                ]
+            },
+            "2": {
+                "count": 1,
+                "distance": 0,
+                "parent": 7,
+                "objects": [
+                    "gen_3"
+                ],
+                "features": [
+                    4.7,
+                    3.2,
+                    1.3,
+                    3.5
+                ]
+            },
+            "3": {
+                "count": 1,
+                "distance": 0,
+                "parent": 6,
+                "objects": [
+                    "gen_4"
+                ],
+                "features": [
+                    4.6,
+                    3.1,
+                    4.3,
+                    1.5
+                ]
+            },
+            "4": {
+                "count": 1,
+                "distance": 0,
+                "parent": 5,
+                "objects": [
+                    "gen_5"
+                ],
+                "features": [
+                    5.0,
+                    3.6,
+                    1.4,
+                    0.2
+                ]
+            },
+            "5": {
+                "count": 2,
+                "distance": 0.202,
+                "left_child": 0,
+                "right_child": 4,
+                "parent": 8
+            },
+            "6": {
+                "count": 2,
+                "distance": 2.072,
+                "left_child": 1,
+                "right_child": 3,
+                "parent": 7
+            },
+            "7": {
+                "count": 3,
+                "distance": 2.767,
+                "left_child": 2,
+                "right_child": 6,
+                "parent": 8
+            },
+            "8": {
+                "count": 5,
+                "distance": 3.083,
+                "left_child": 5,
+                "right_child": 7
+            }
+        },
+        "feature_names": [
+            "sample_1",
+            "sample_2",
+            "sample_3",
+            "sample_4"
+        ]
+    },
+    "column_metadata": {
+        "features": [
+            [
+                "sample_1",
+                "sample_2",
+                "sample_3",
+                "sample_4"
+            ],
+            [
+                "Primary Tumor",
+                "Primary Tumor",
+                "Solid Tissue Normal",
+                "Primary Tumor"
+            ]
+        ],
+        "feature_names": [
+            "id",
+            "s"
+        ]
+    }
+}

@@ -1,0 +1,6 @@
+Class,tumour,tumour,normal,normal,normal
+Medication,no_medication,medication,no_medication,no_medication,medication
+Smoking,smoked,no_smoked,smoked,smoked,smoked
+Gender,male,female,female,male,male
+Age,26.1,26.1,43.54,54.1,23.5
+Alcohol,alcohol_abuse,alcohol_abuse,alcohol_abuse,alcohol_abuse,alcohol_abuse
