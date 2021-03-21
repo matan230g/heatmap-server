@@ -3,20 +3,22 @@ from pydantic import BaseModel
 from fastapi import APIRouter,Header,HTTPException,FastAPI, File, UploadFile,Response,Request
 import json
 import pandas as pd
+import datetime
 import shutil
 import json
 import uuid
 from utils import heatmap
 import os
+from shutil import copyfile
 from itertools import chain
-
+from distutils.dir_util import copy_tree
 
 router = APIRouter()
 
 
 @router.post('/uploadone')
 async def upload_file(response: Response,files:List = File(...)):
-    try:
+    #try:
         properties = json.loads(files[len(files)-1])
 
         rand_user_id = uuid.uuid4()
@@ -39,11 +41,22 @@ async def upload_file(response: Response,files:List = File(...)):
         
         #RESPONSE TO CLIENT UUID
         response.headers["uuid"] = str(rand_user_id)
-    except:
-         raise HTTPException(status_code=500, detail="Something get wrong, check your settings again")
+
+        json_map1 = json.loads(respone_heatmap)
+        with open(f"upload_data/{str(rand_user_id)}/heatmap1.json", 'w') as fp:
+            json.dump(json_map1, fp)
+    #except:
+         #raise HTTPException(status_code=500, detail="Something get wrong, check your settings again")
         
-    return respone_heatmap
-    
+        return respone_heatmap
+
+
+@router.post('/save')
+async def save_current(request: Request):
+    uuid = request.headers['uuid']
+    file_name = create_save_dir(uuid)
+    copy_files_to_saved_dir(uuid,file_name)
+    return {'uuid':uuid, 'file_name': file_name}
 
 
   
@@ -63,7 +76,6 @@ async def upload_two_files(response: Response,files:List = File(...)):
 
         prepare_file(rand_user_id) 
 
-        # print('propertiesssssssss,',properties)
         properties['metadata1']=properties['metadata']
         properites_first_map = get_prop(properties,'file1','1','metadata1','raw_linkage','raw_distance','both1','column_linkage','column_distance')
         two_heatmap_properties(files_tuple,rand_user_id,files,filenames,locations_of_files,properties)
@@ -76,18 +88,42 @@ async def upload_two_files(response: Response,files:List = File(...)):
         properites_second_map = get_prop(properties,'file2','2','metadata2','raw_linkage2','raw_distance2','both2','column_linkage2','column_distance2')
         respone_second_heatmap = create_heat_map(properties,properites_second_map,locations_of_files)
 
-        # twomaps={ "first": respone_first_heatmap, "second": respone_second_heatmap}; #need to get also 2 connection dict
         answer = {"first": respone_first_heatmap, "second": respone_second_heatmap,
                   "first_second_connections": first_to_second, "second_first_connections": second_to_first}
         response.headers["uuid"] = str(rand_user_id)
+
+
+        json_map1 = json.loads(respone_first_heatmap)
+        json_map2 = json.loads(respone_second_heatmap)
+
+        with open(f"upload_data/{str(rand_user_id)}/heatmap1.json", 'w') as fp:
+            json.dump(json_map1, fp)
+
+        with open(f"upload_data/{str(rand_user_id)}/heatmap2.json", 'w') as fp:
+            json.dump(json_map2, fp)
+
         return answer
 
     except:
-         print('blabla')
-         raise HTTPException(status_code=500, detail="Something get wrong, check your settings again")
-    return twomaps
+        raise HTTPException(status_code=500, detail="Something get wrong, check your settings again")
+
     
-    
+@router.post('/upload-saved')
+async def upload_two_files(file: UploadFile = File(...)):
+    uuid = file.file.readline().strip().decode()
+    file_name = file.file.readline().strip().decode()
+    copy_from_saved_to_original(uuid,file_name)
+    if os.path.exists(f"upload_data/{uuid}/heatmap2.json"):
+        f=open(f"upload_data/{uuid}/heatmap1.json")
+        first = json.load(f)
+
+        f=open(f"upload_data/{uuid}/heatmap2.json")
+        second = json.load(f)
+        return {'first': json.dumps(first), 'second': json.dumps(second), 'uuid':uuid}
+    else:
+        f=open(f"upload_data/{uuid}/heatmap1.json")
+        first = json.load(f)
+        return {'first': json.dumps(first), 'uuid':uuid}
   
 @router.post('/union')
 async def union(request: Request):
@@ -116,16 +152,14 @@ async def union(request: Request):
 @router.post('/intersection')
 async def intersection(request: Request):
     properties = json.loads(await request.body())
-    properties['metdata'] = '0' 
+    properties['metdata'] = '0'
     uuid = request.headers['uuid']
-    targets = get_targets(properties,uuid)
+    targets = get_targets(properties, uuid)
     if len(targets) < 2:
-          raise HTTPException(status_code=500, detail="No " + properties['action'] +'`s found')
-    create_new_heatmap_from_targets(properties,targets,properties['data_work_on'],uuid)
+        raise HTTPException(status_code=500, detail="No " + properties['action'] + '`s found')
+    create_new_heatmap_from_targets(properties, targets, properties['data_work_on'], uuid)
 
-
-
-    return heatmap_values
+    ##return heatmap_values
 
 def prepar_md_locations(propperties,uuid):
     md_location=""
@@ -160,7 +194,6 @@ def get_targets(properties,uuid):
 
 
 def create_new_heatmap_from_targets(properties,targets,choise,uuid):
-    location=""
     if choise == "first_second":
         location="heatmap2.csv"
     else:
@@ -322,3 +355,22 @@ def create_connection_file(file,id):
     return first_to_second, second_to_first
 
 
+def create_save_dir(uuid):
+    file_name = str(datetime.datetime.now()).replace(":","_")
+    if not os.path.exists('saved_data'):
+        os.makedirs('saved_data')
+    if not os.path.exists(f"saved_data/{uuid}"):
+        os.makedirs(f"saved_data/{uuid}")
+    os.makedirs(f'saved_data/{uuid}/{file_name}')    
+    return file_name
+
+def  copy_from_saved_to_original(uuid,file_name):
+    new_data_saved_location = f"upload_data/{uuid}"
+    old_data_saved_location = f'saved_data/{uuid}/{file_name}'
+    copy_tree(old_data_saved_location, new_data_saved_location)
+
+
+def copy_files_to_saved_dir(uuid, file_name):
+    old_data_saved_location = f"upload_data/{uuid}"
+    new_data_saved_location = f'saved_data/{uuid}/{file_name}'
+    copy_tree(old_data_saved_location, new_data_saved_location)
