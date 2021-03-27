@@ -130,28 +130,29 @@ async def upload_two_files(file: UploadFile = File(...)):
   
 @router.post('/union')
 async def union(request: Request):
-    properties = json.loads(await request.body())
-    properties['metdata'] = '0' 
-    uuid = request.headers['uuid']
-    targets = get_targets(properties,uuid)
-    if len(targets) < 2:
-          raise HTTPException(status_code=500, detail="No " + properties['action'] +'`s found')
-    create_new_heatmap_from_targets(properties,targets,properties['data_work_on'],uuid)
-    locations = prepar_md_locations(properties,uuid)
-    new_data_location = f"upload_data/{uuid}/{properties['action']}.csv"
+    try:
+        properties = json.loads(await request.body())
+        properties['metdata'] = '0' 
+        uuid = request.headers['uuid']
+        targets = get_targets(properties,uuid)
+        if len(targets) < 2:
+            raise HTTPException(status_code=500, detail="No " + properties['action'] +'`s found')
+        create_new_heatmap_from_targets(properties,targets,properties['data_work_on'],uuid)
+        locations = prepar_md_locations(properties,uuid)
+        new_data_location = f"upload_data/{uuid}/{properties['action']}.csv"
 
-    md_location = prepar_md_locations(properties,uuid) ##check if there is any metdadata to add
-    if md_location != "": 
-       print(md_location)
-       properties['metadata'] = '1'
+        md_location = prepar_md_locations(properties,uuid) ##check if there is any metdadata to add
+        if md_location != "": 
+            properties['metadata'] = '1'
 
-    if properties['both1'] == 0:
-        heatmap_res = heatmap.create_heatmap_json(new_data_location,row_distance=properties['raw_distance'],row_linkage=properties['raw_linkage'],properties=properties,metadata=md_location)
-    else:
-        heatmap_res = heatmap.create_heatmap_json(new_data_location,row_distance=properties['raw_distance'],row_linkage=properties['raw_linkage'],column_distance=properties['column_distance'],column_linkage=properties['column_linkage'],properties=properties,metadata=md_location)
-  
-    return heatmap_res
-
+        if properties['both1'] == 0:
+            heatmap_res = heatmap.create_heatmap_json(new_data_location,row_distance=properties['raw_distance'],row_linkage=properties['raw_linkage'],properties=properties,metadata=md_location)
+        else:
+            heatmap_res = heatmap.create_heatmap_json(new_data_location,row_distance=properties['raw_distance'],row_linkage=properties['raw_linkage'],column_distance=properties['column_distance'],column_linkage=properties['column_linkage'],properties=properties,metadata=md_location)
+    
+        return heatmap_res
+    except:
+        raise HTTPException(status_code=500, detail="Error! Check your connection file")
 @router.post('/intersection')
 async def intersection(request: Request):
     properties = json.loads(await request.body())
@@ -178,6 +179,7 @@ def prepar_md_locations(propperties,uuid):
 def get_targets(properties,uuid):
     data = pd.read_csv(f"upload_data/{uuid}/{properties['data_work_on']}"+"_connections.csv",names=['src','target'])
     targets = []
+    val = ""
     dic_data =  data.set_index('src').T.to_dict('list')
     for src in properties['values']:
         if src in dic_data.keys():
@@ -188,7 +190,6 @@ def get_targets(properties,uuid):
         if properties['action'] == 'union':
            targets.extend((val.split(',')))
         else:
-           print(targets)
            targets = list(set(targets) & set(val.split(',')))
            if len(targets) == 0:
                return targets
