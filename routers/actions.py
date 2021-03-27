@@ -75,9 +75,12 @@ async def upload_two_files(response: Response,files:List = File(...)):
         locations_of_files = {}
 
         prepare_file(rand_user_id) 
-
         properties['metadata1']=properties['metadata']
-        properites_first_map = get_prop(properties,'file1','1','metadata1','raw_linkage','raw_distance','both1','column_linkage','column_distance')
+        print(properties)
+        print('properties[compressed_value]',properties['compressed_value'])
+
+        properites_first_map = get_prop(properties,'file1','1','metadata1','raw_linkage','raw_distance','both1','column_linkage','column_distance', 'compress1', 'compressed_number','compressed_value')
+
         two_heatmap_properties(files_tuple,rand_user_id,files,filenames,locations_of_files,properties)
         copy_files(files_tuple)
         
@@ -85,7 +88,7 @@ async def upload_two_files(response: Response,files:List = File(...)):
 
         respone_first_heatmap = create_heat_map(properties,properites_first_map,locations_of_files)
 
-        properites_second_map = get_prop(properties,'file2','2','metadata2','raw_linkage2','raw_distance2','both2','column_linkage2','column_distance2')
+        properites_second_map = get_prop(properties,'file2','2','metadata2','raw_linkage2','raw_distance2','both2','column_linkage2','column_distance2','compress2','compressed_number2', 'compressed_value2')
         respone_second_heatmap = create_heat_map(properties,properites_second_map,locations_of_files)
 
         answer = {"first": respone_first_heatmap, "second": respone_second_heatmap,
@@ -259,34 +262,55 @@ def copy_files(files):
         with open(file_location, "wb+") as file_object:
             shutil.copyfileobj(file[0].file, file_object) 
 
-def get_prop(properties,file, file_num,metadata,raw_linkage,raw_distance,both,column_linkage,column_distance):
+def get_prop(properties,file, file_num,metadata,raw_linkage,raw_distance,both,column_linkage,column_distance, compress, compressed_number, compressed_value):
+    
     properties_edit ={}
     properties_edit['file'] = properties[file]
     properties_edit['file_num'] = file_num
-    # print('ppppproperties', properties)
     properties_edit[metadata] = properties[metadata]
     properties_edit['raw_linkage'] = properties[raw_linkage]
     properties_edit['raw_distance'] = properties[raw_distance]
+
     if properties[both] == 1:
         properties_edit[both] = 1
         properties_edit['column_linkage'] = properties[column_linkage]
         properties_edit['column_distance'] = properties[column_distance] 
     else:
         properties_edit[both] = 0
+
+    print('compress: ',compress)
+    print('properties[compress]: ',properties[compress])
+
+    if properties[compress] == 1:
+        properties_edit[compress] = 1
+        # print('properties[compressed_number]: ',properties[compressed_number])
+        print('properties[compressed_value] : ',properties[compressed_value])
+
+        properties_edit['compressed_number'] = properties[compressed_number]
+        properties_edit['compressed_value'] = properties[compressed_value] 
+    else:
+        properties_edit[compress] = 0
+    print('properties_edit: ',properties_edit)    
     return properties_edit
 
 def create_heat_map(original_propperties, heatmap_propperties,locations_of_files):
+
+    print('original_propperties: ' ,original_propperties)
+    print('heatmap_propperties: ' ,heatmap_propperties)
     try:
         map_num= int(heatmap_propperties['file_num']);
         heatmapId= 'heatmap'+str(map_num)
         metadataId= 'metadata'+str(map_num)
         bothId= 'both'+str(map_num)
+        compressId= 'compress'+str(map_num)
 
     except:
         map_num=1
         heatmapId= 'heatmap1'
         metadataId= 'metadata'
         bothId= 'both1'
+        compressId= 'compress1'
+
 
     # print('heatmap_proppertiesssss',heatmap_propperties)
     if heatmap_propperties[metadataId] =='1':
