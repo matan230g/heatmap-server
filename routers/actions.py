@@ -76,8 +76,8 @@ async def upload_two_files(response: Response,files:List = File(...)):
 
         prepare_file(rand_user_id) 
         properties['metadata1']=properties['metadata']
-        print(properties)
-        print('properties[compressed_value]',properties['compressed_value'])
+        # print(properties)
+        # print('properties[compressed_value]',properties['compressed_value'])
 
         properites_first_map = get_prop(properties,'file1','1','metadata1','raw_linkage','raw_distance','both1','column_linkage','column_distance', 'compress1', 'compressed_number','compressed_value')
 
@@ -130,29 +130,28 @@ async def upload_two_files(file: UploadFile = File(...)):
   
 @router.post('/union')
 async def union(request: Request):
-    try:
-        properties = json.loads(await request.body())
-        properties['metdata'] = '0' 
-        uuid = request.headers['uuid']
-        targets = get_targets(properties,uuid)
-        if len(targets) < 2:
-            raise HTTPException(status_code=500, detail="No " + properties['action'] +'`s found')
-        create_new_heatmap_from_targets(properties,targets,properties['data_work_on'],uuid)
-        locations = prepar_md_locations(properties,uuid)
-        new_data_location = f"upload_data/{uuid}/{properties['action']}.csv"
+    properties = json.loads(await request.body())
+    properties['metdata'] = '0' 
+    uuid = request.headers['uuid']
+    targets = get_targets(properties,uuid)
+    if len(targets) < 2:
+          raise HTTPException(status_code=500, detail="No " + properties['action'] +'`s found')
+    create_new_heatmap_from_targets(properties,targets,properties['data_work_on'],uuid)
+    locations = prepar_md_locations(properties,uuid)
+    new_data_location = f"upload_data/{uuid}/{properties['action']}.csv"
 
-        md_location = prepar_md_locations(properties,uuid) ##check if there is any metdadata to add
-        if md_location != "": 
-            properties['metadata'] = '1'
+    md_location = prepar_md_locations(properties,uuid) ##check if there is any metdadata to add
+    if md_location != "": 
+    #    print(md_location)
+       properties['metadata'] = '1'
 
-        if properties['both1'] == 0:
-            heatmap_res = heatmap.create_heatmap_json(new_data_location,row_distance=properties['raw_distance'],row_linkage=properties['raw_linkage'],properties=properties,metadata=md_location)
-        else:
-            heatmap_res = heatmap.create_heatmap_json(new_data_location,row_distance=properties['raw_distance'],row_linkage=properties['raw_linkage'],column_distance=properties['column_distance'],column_linkage=properties['column_linkage'],properties=properties,metadata=md_location)
-    
-        return heatmap_res
-    except:
-        raise HTTPException(status_code=500, detail="Error! Check your connection file")
+    if properties['both1'] == 0:
+        heatmap_res = heatmap.create_heatmap_json(new_data_location,row_distance=properties['raw_distance'],row_linkage=properties['raw_linkage'],properties=properties,metadata=md_location)
+    else:
+        heatmap_res = heatmap.create_heatmap_json(new_data_location,row_distance=properties['raw_distance'],row_linkage=properties['raw_linkage'],column_distance=properties['column_distance'],column_linkage=properties['column_linkage'],properties=properties,metadata=md_location)
+  
+    return heatmap_res
+
 @router.post('/intersection')
 async def intersection(request: Request):
     properties = json.loads(await request.body())
@@ -179,7 +178,6 @@ def prepar_md_locations(propperties,uuid):
 def get_targets(properties,uuid):
     data = pd.read_csv(f"upload_data/{uuid}/{properties['data_work_on']}"+"_connections.csv",names=['src','target'])
     targets = []
-    val = ""
     dic_data =  data.set_index('src').T.to_dict('list')
     for src in properties['values']:
         if src in dic_data.keys():
@@ -190,6 +188,7 @@ def get_targets(properties,uuid):
         if properties['action'] == 'union':
            targets.extend((val.split(',')))
         else:
+        #    print(targets)
            targets = list(set(targets) & set(val.split(',')))
            if len(targets) == 0:
                return targets
@@ -279,25 +278,25 @@ def get_prop(properties,file, file_num,metadata,raw_linkage,raw_distance,both,co
     else:
         properties_edit[both] = 0
 
-    print('compress: ',compress)
-    print('properties[compress]: ',properties[compress])
+    # print('compress: ',compress)
+    # print('properties[compress]: ',properties[compress])
 
     if properties[compress] == 1:
         properties_edit[compress] = 1
         # print('properties[compressed_number]: ',properties[compressed_number])
-        print('properties[compressed_value] : ',properties[compressed_value])
+        # print('properties[compressed_value] : ',properties[compressed_value] )
 
         properties_edit['compressed_number'] = properties[compressed_number]
         properties_edit['compressed_value'] = properties[compressed_value] 
     else:
         properties_edit[compress] = 0
-    print('properties_edit: ',properties_edit)    
+    # print('properties_edit: ',properties_edit)    
     return properties_edit
 
 def create_heat_map(original_propperties, heatmap_propperties,locations_of_files):
 
-    print('original_propperties: ' ,original_propperties)
-    print('heatmap_propperties: ' ,heatmap_propperties)
+    # print('original_propperties: ' ,original_propperties)
+    # print('heatmap_propperties: ' ,heatmap_propperties)
     try:
         map_num= int(heatmap_propperties['file_num']);
         heatmapId= 'heatmap'+str(map_num)
