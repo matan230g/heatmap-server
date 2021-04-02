@@ -31,7 +31,6 @@ def create_heatmap_json(data,**kwargs):
     d.create_cluster_heatmap(compress=100, compressed_value="median", write_data=True)
     if properties[metadataId] == '1':
         metadata  = kwargs.pop('metadata')
-        print(metadata)
     # read metadata file with specified delimiter, also specify whether there is a header row
         # d.add_metadata_from_file(metadata_file=metadata, delimiter=",", header=True, metadata_compressed_value="frequency")
 

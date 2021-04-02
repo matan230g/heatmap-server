@@ -31,7 +31,6 @@ app.add_middleware(
 )
 @app.exception_handler(Exception)
 async def unicorn_exception_handler(request: Request,exc: Exception):
-    print(exc)
     exception_class = exc.__class__.__name__
     if exception_class == "FileNotFoundError":
         return JSONResponse(
