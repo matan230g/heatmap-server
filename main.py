@@ -48,6 +48,11 @@ async def unicorn_exception_handler(request: Request,exc: Exception):
             status_code=404,
             content={"message": f"KeyError could not find {exc.args},please check that the data contains the keys"}
         )
+    elif exception_class == 'RRuntimeError':
+        return JSONResponse(
+            status_code=400,
+            content={"message": "Deseq analysis must have count values (integers) not float, please upload data according to the instructions"}
+        )
     else:
         return JSONResponse(
             status_code=500,
@@ -59,7 +64,7 @@ async def hello_world():
     return {"Hello" : "world1"}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)
 
 
 

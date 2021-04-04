@@ -1,5 +1,4 @@
 import plotly.express as px
-import pandas as pd
 import numpy as np
 
 class volcano_plot :
@@ -37,6 +36,7 @@ class volcano_plot :
         self.data.loc[(self.data[self.x] <= -self.x_th) & (self.data[self.y] < self.y_th), 'color'] = 'Low'
         self.data.loc[(self.data[self.x] >= self.x_th) & (self.data[self.y] < self.y_th), 'color'] = 'High'
         self.data['color'].fillna('Normal' , inplace=True)
+        return self.data
 
     # mathematical calculation for a column at the request of a user
     def column_operation(self,column,operation):
