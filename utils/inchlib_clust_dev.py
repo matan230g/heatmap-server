@@ -25,7 +25,6 @@ class Dendrogram():
         self.axis = clustering.clustering_axis
         self.clustering = clustering.clustering
         self.tree = hcluster.to_tree(self.clustering)
-        # print(list(hcluster.leaves_list(self.clustering)))
         self.data = clustering.data
         self.data_names = clustering.data_names
         self.header = clustering.header
@@ -114,7 +113,6 @@ class Dendrogram():
         self.compress_cluster_threshold = 0
         if self.compress and self.compress >= 0:
             self.compress_cluster_threshold = self.__get_distance_threshold__(compress)
-            print("Distance threshold for compression:", self.compress_cluster_threshold)
             if self.compress_cluster_threshold >= 0:
                 self.__compress_data__()
         else:
@@ -217,7 +215,6 @@ class Dendrogram():
                     parent_id = node["parent"]
 
     def __get_distance_threshold__(self, cluster_count):
-        print("Calculating distance threshold...")
         if cluster_count >= self.tree.count:
             return -1
         
@@ -321,10 +318,8 @@ class Dendrogram():
         self.__connect_metadata_to_data__()
 
     def __connect_metadata_to_data__(self):
-        print("Adding metadata: {} rows".format(len(self.metadata)))
 
-        print(self.metadata)
-
+    
         self.dendrogram["metadata"] = {}
 
         if self.metadata_header:
@@ -419,7 +414,7 @@ class Dendrogram():
 
         self.alternative_data = self.__read_alternative_data__(alternative_data)
 
-        print("Adding alternative data: {} rows".format(len(self.alternative_data)))
+
         self.dendrogram["alternative_data"]["nodes"] = self.__connect_additional_data_to_data__(self.alternative_data, self.alternative_data_compressed_value)
 
     def __reorder_alternative_data__(self, alternative_data):
@@ -440,11 +435,8 @@ class Dendrogram():
         return {str(r[0]):r[1:] for r in alternative_data}
 
     def __connect_additional_data_to_data__(self, additional_data, compressed_value):
-        print('additional_data.keys() ',additional_data.keys())
-        print('self.data_names ',self.data_names)
 
         if len(set(additional_data.keys()) & set(self.data_names)) == 0:
-            print("No data objects correspond with the clustered data according to their IDs. No additional data added.")
             return
 
         if not self.dendrogram:
@@ -518,7 +510,6 @@ class Cluster():
         """Reads data in a form of list of lists (tuples)"""
         self.datatype = datatype
         self.missing_values = missing_values
-        print(self.missing_values)
         self.header = header
         data_start = 0
 
@@ -577,7 +568,6 @@ class Cluster():
         @row_linkage/column_linkage - see. LINKAGES variable
         @axis - row/both
         """
-        print("Clustering rows:", row_distance, row_linkage)
         self.clustering_axis = axis
         row_linkage = str(row_linkage)
         
@@ -600,7 +590,6 @@ class Cluster():
         self.column_clustering = []
 
         if axis == "both" and len(self.data[0]) > 2:
-            print("Clustering columns:", column_distance, column_linkage)
             self.__cluster_columns__(column_distance, column_linkage)
         
         if self.write_original or self.datatype == "nominal":

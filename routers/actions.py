@@ -62,9 +62,8 @@ async def save_current(request: Request):
   
 @router.post('/upload')
 async def upload_two_files(response: Response,files:List = File(...)):
-    try:
+    #try:
         properties = json.loads(files[len(files)-1])
-
         rand_user_id = uuid.uuid4()
         # JUST FOR TEST TO AVOID A LOT OF FILES
         #
@@ -80,6 +79,8 @@ async def upload_two_files(response: Response,files:List = File(...)):
         properites_first_map = get_prop(properties,'file1','1','metadata1','raw_linkage','raw_distance','both1','column_linkage','column_distance')
         two_heatmap_properties(files_tuple,rand_user_id,files,filenames,locations_of_files,properties)
         copy_files(files_tuple)
+
+        save_properties(properties,rand_user_id)
         
         first_to_second, second_to_first= create_connection_file(files[len(files)-2],rand_user_id)
 
@@ -104,8 +105,8 @@ async def upload_two_files(response: Response,files:List = File(...)):
 
         return answer
 
-    except:
-        raise HTTPException(status_code=500, detail="Something get wrong, check your settings again")
+    #except:
+       # raise HTTPException(status_code=500, detail="Something get wrong, check your settings again")
 
     
 @router.post('/upload-saved')
@@ -127,28 +128,29 @@ async def upload_two_files(file: UploadFile = File(...)):
   
 @router.post('/union')
 async def union(request: Request):
-    properties = json.loads(await request.body())
-    properties['metdata'] = '0' 
-    uuid = request.headers['uuid']
-    targets = get_targets(properties,uuid)
-    if len(targets) < 2:
-          raise HTTPException(status_code=500, detail="No " + properties['action'] +'`s found')
-    create_new_heatmap_from_targets(properties,targets,properties['data_work_on'],uuid)
-    locations = prepar_md_locations(properties,uuid)
-    new_data_location = f"upload_data/{uuid}/{properties['action']}.csv"
+    try:
+        properties = json.loads(await request.body())
+        properties['metdata'] = '0' 
+        uuid = request.headers['uuid']
+        targets = get_targets(properties,uuid)
+        if len(targets) < 2:
+            raise HTTPException(status_code=500, detail="No " + properties['action'] +'`s found')
+        create_new_heatmap_from_targets(properties,targets,properties['data_work_on'],uuid)
+        locations = prepar_md_locations(properties,uuid)
+        new_data_location = f"upload_data/{uuid}/{properties['action']}.csv"
 
-    md_location = prepar_md_locations(properties,uuid) ##check if there is any metdadata to add
-    if md_location != "": 
-       print(md_location)
-       properties['metadata'] = '1'
+        md_location = prepar_md_locations(properties,uuid) ##check if there is any metdadata to add
+        if md_location != "": 
+            properties['metadata'] = '1'
 
-    if properties['both1'] == 0:
-        heatmap_res = heatmap.create_heatmap_json(new_data_location,row_distance=properties['raw_distance'],row_linkage=properties['raw_linkage'],properties=properties,metadata=md_location)
-    else:
-        heatmap_res = heatmap.create_heatmap_json(new_data_location,row_distance=properties['raw_distance'],row_linkage=properties['raw_linkage'],column_distance=properties['column_distance'],column_linkage=properties['column_linkage'],properties=properties,metadata=md_location)
-  
-    return heatmap_res
-
+        if properties['both1'] == 0:
+            heatmap_res = heatmap.create_heatmap_json(new_data_location,row_distance=properties['raw_distance'],row_linkage=properties['raw_linkage'],properties=properties,metadata=md_location)
+        else:
+            heatmap_res = heatmap.create_heatmap_json(new_data_location,row_distance=properties['raw_distance'],row_linkage=properties['raw_linkage'],column_distance=properties['column_distance'],column_linkage=properties['column_linkage'],properties=properties,metadata=md_location)
+    
+        return heatmap_res
+    except:
+        raise HTTPException(status_code=500, detail="Error! Check your connection file")
 @router.post('/intersection')
 async def intersection(request: Request):
     properties = json.loads(await request.body())
@@ -175,6 +177,7 @@ def prepar_md_locations(propperties,uuid):
 def get_targets(properties,uuid):
     data = pd.read_csv(f"upload_data/{uuid}/{properties['data_work_on']}"+"_connections.csv",names=['src','target'])
     targets = []
+    val = ""
     dic_data =  data.set_index('src').T.to_dict('list')
     for src in properties['values']:
         if src in dic_data.keys():
@@ -185,7 +188,6 @@ def get_targets(properties,uuid):
         if properties['action'] == 'union':
            targets.extend((val.split(',')))
         else:
-           print(targets)
            targets = list(set(targets) & set(val.split(',')))
            if len(targets) == 0:
                return targets
@@ -263,7 +265,6 @@ def get_prop(properties,file, file_num,metadata,raw_linkage,raw_distance,both,co
     properties_edit ={}
     properties_edit['file'] = properties[file]
     properties_edit['file_num'] = file_num
-    # print('ppppproperties', properties)
     properties_edit[metadata] = properties[metadata]
     properties_edit['raw_linkage'] = properties[raw_linkage]
     properties_edit['raw_distance'] = properties[raw_distance]
@@ -288,7 +289,6 @@ def create_heat_map(original_propperties, heatmap_propperties,locations_of_files
         metadataId= 'metadata'
         bothId= 'both1'
 
-    # print('heatmap_proppertiesssss',heatmap_propperties)
     if heatmap_propperties[metadataId] =='1':
         if original_propperties[bothId] == 1:
             heatmap_res = heatmap.create_heatmap_json(locations_of_files[heatmapId],metadata=locations_of_files[metadataId],row_distance=heatmap_propperties['raw_distance'],row_linkage=heatmap_propperties['raw_linkage'],column_distance=heatmap_propperties['column_distance'],column_linkage=heatmap_propperties['column_linkage'],properties=heatmap_propperties)
@@ -374,3 +374,7 @@ def copy_files_to_saved_dir(uuid, file_name):
     old_data_saved_location = f"upload_data/{uuid}"
     new_data_saved_location = f'saved_data/{uuid}/{file_name}'
     copy_tree(old_data_saved_location, new_data_saved_location)
+
+def save_properties(properties,uuid):
+    with open(f"upload_data/{uuid}/properties.json", 'w') as f:
+        json.dump(properties, f)
