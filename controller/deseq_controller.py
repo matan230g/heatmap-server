@@ -67,6 +67,9 @@ def filter_heatmap_controller(deseq_path,heatmap_path,plot_path):
     filter_values = deseq_result['id'].values
     heatmap_df = pd.read_csv(heatmap_path)
     heatmap_df = heatmap_df[heatmap_df['id'].isin(filter_values)]
+    #load properties
+    # create new heatmap without compressing with relevent properties
+    # send the new heatmap to the client
 
 
     json_fig = volcano_plot.create_volcano_plot()

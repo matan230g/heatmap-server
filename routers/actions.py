@@ -42,6 +42,9 @@ async def upload_file(response: Response,files:List = File(...)):
         #RESPONSE TO CLIENT UUID
         response.headers["uuid"] = str(rand_user_id)
 
+        save_properties(properties,uuid)
+
+
         json_map1 = json.loads(respone_heatmap)
         with open(f"upload_data/{str(rand_user_id)}/heatmap1.json", 'w') as fp:
             json.dump(json_map1, fp)
@@ -151,6 +154,7 @@ async def union(request: Request):
         return heatmap_res
     except:
         raise HTTPException(status_code=500, detail="Error! Check your connection file")
+
 @router.post('/intersection')
 async def intersection(request: Request):
     properties = json.loads(await request.body())
@@ -364,11 +368,10 @@ def create_save_dir(uuid):
     os.makedirs(f'saved_data/{uuid}/{file_name}')    
     return file_name
 
-def  copy_from_saved_to_original(uuid,file_name):
+def copy_from_saved_to_original(uuid,file_name):
     new_data_saved_location = f"upload_data/{uuid}"
     old_data_saved_location = f'saved_data/{uuid}/{file_name}'
     copy_tree(old_data_saved_location, new_data_saved_location)
-
 
 def copy_files_to_saved_dir(uuid, file_name):
     old_data_saved_location = f"upload_data/{uuid}"
