@@ -79,10 +79,12 @@ async def filter_heatmap(request: Request):
     heatmap_file = get_file_by_side('heatmap',side)
     plot_setting_file = get_file_by_side('plot_setting',side,'.json')
     deseq_path = f"upload_data/{uuid}/{deseq_file}"
+    properties_path = f"upload_data/{uuid}/properties.json"
+    filtered_heatmap = f"upload_data/{uuid}/filtered-heatmap.csv"
     heatmap_path = f"upload_data/{uuid}/{heatmap_file}"
     plot_path = f"upload_data/{uuid}/{plot_setting_file}"
-    deseq_controller.filter_heatmap_controller(deseq_path,heatmap_path,plot_path)
-
+    res = deseq_controller.filter_heatmap_controller(deseq_path,heatmap_path,plot_path,properties_path,side,filtered_heatmap,uuid)
+    return res;
 
 
 def get_ids(filename,uuid):

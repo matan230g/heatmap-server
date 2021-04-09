@@ -1,7 +1,6 @@
 from typing import List
-from pydantic import BaseModel
-from fastapi import APIRouter,Header,HTTPException,FastAPI, File, UploadFile,Response,Request
-import json
+
+from fastapi import APIRouter,HTTPException, File, UploadFile,Response,Request
 import pandas as pd
 import datetime
 import shutil
@@ -9,8 +8,6 @@ import json
 import uuid
 from utils import heatmap
 import os
-from shutil import copyfile
-from itertools import chain
 from distutils.dir_util import copy_tree
 
 router = APIRouter()
@@ -42,7 +39,7 @@ async def upload_file(response: Response,files:List = File(...)):
         #RESPONSE TO CLIENT UUID
         response.headers["uuid"] = str(rand_user_id)
 
-        save_properties(properties,uuid)
+        save_properties(properties,rand_user_id)
 
 
         json_map1 = json.loads(respone_heatmap)
@@ -79,7 +76,7 @@ async def upload_two_files(response: Response,files:List = File(...)):
         prepare_file(rand_user_id) 
 
         properties['metadata1']=properties['metadata']
-        properites_first_map = get_prop(properties,'file1','1','metadata1','raw_linkage','raw_distance','both1','column_linkage','column_distance')
+        properites_first_map = get_prop(properties,'file1','1','metadata1','raw_linkage1','raw_distance1','both1','column_linkage1','column_distance1')
         two_heatmap_properties(files_tuple,rand_user_id,files,filenames,locations_of_files,properties)
         copy_files(files_tuple)
 

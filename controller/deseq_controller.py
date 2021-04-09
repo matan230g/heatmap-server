@@ -2,6 +2,7 @@ import pandas as pd
 import json
 from routers.Unicorn_Exception import UnicornException
 from utils import Deseq
+from utils import heatmap
 from utils import ploty_vp as vp
 
 
@@ -47,7 +48,7 @@ def deseq_volcano_controller(json_data,file_path,output_file,uuid):
     return json_fig
 
 
-def filter_heatmap_controller(deseq_path,heatmap_path,plot_path):
+def filter_heatmap_controller(deseq_path,heatmap_path,plot_path,properties_path,side,filtered_heatmap_path,uuid):
     deseq_result = pd.read_csv(deseq_path)
     with open(plot_path) as json_file:
         plot_settings = json.load(json_file)
@@ -64,20 +65,31 @@ def filter_heatmap_controller(deseq_path,heatmap_path,plot_path):
     deseq_result = volcano_plot.add_color_by_condition()
     deseq_result = deseq_result[deseq_result['color'] != 'Normal']
     volcano_plot.data = deseq_result
+    deseq_result.head()
     filter_values = deseq_result['id'].values
     heatmap_df = pd.read_csv(heatmap_path)
     heatmap_df = heatmap_df[heatmap_df['id'].isin(filter_values)]
-    #load properties
-    # create new heatmap without compressing with relevent properties
-    # send the new heatmap to the client
 
+    ## TODO: check here if the heatmap_df is not empty , if empty raise exception
+    heatmap_df.to_csv(f"upload_data/{uuid}/filtered_heatmap.csv", index=False)
 
+    heatmap_json = create_heat_map(properties_path,side,filtered_heatmap_path)
     json_fig = volcano_plot.create_volcano_plot()
-    return json_fig
-
-    print("banana")
+    return {"plot":json_fig, "heatmap": heatmap_json}
 
 
 
+def create_heat_map(properties_path,side,filtered_heatmap_path):
+    with open(properties_path) as json_file:
+        properties = json.load(json_file)
+    if side == 3:
+        side=""
+    meta_data_key = "metadata"+side
 
-
+    heatmap_res = heatmap.create_heatmap_json(filtered_heatmap_path, metadata=properties[meta_data_key],
+                                          row_distance=properties['raw_distance'+side],
+                                          row_linkage=properties['raw_linkage'+side],
+                                          column_distance=properties['column_distance'+side],
+                                          column_linkage=properties['column_linkage'+side],
+                                          properties=properties)
+    return heatmap_res
