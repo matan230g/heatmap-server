@@ -1,5 +1,5 @@
 from typing import List
-
+from routers.Unicorn_Exception import UnicornException
 from fastapi import APIRouter,HTTPException, File, UploadFile,Response,Request
 import pandas as pd
 import datetime
@@ -12,12 +12,11 @@ from distutils.dir_util import copy_tree
 
 router = APIRouter()
 
-
 @router.post('/uploadone')
 async def upload_file(response: Response,files:List = File(...)):
     #try:
         properties = json.loads(files[len(files)-1])
-
+        check_file_type(files[:len(files)-1])
         rand_user_id = uuid.uuid4()
         # JUST FOR TEST TO AVOID A LOT OF FILES
         #
@@ -64,6 +63,7 @@ async def save_current(request: Request):
 async def upload_two_files(response: Response,files:List = File(...)):
     #try:
         properties = json.loads(files[len(files)-1])
+        check_file_type(files[:len(files)-1])
         rand_user_id = uuid.uuid4()
         # JUST FOR TEST TO AVOID A LOT OF FILES
         #
@@ -378,3 +378,10 @@ def copy_files_to_saved_dir(uuid, file_name):
 def save_properties(properties,uuid):
     with open(f"upload_data/{uuid}/properties.json", 'w') as f:
         json.dump(properties, f)
+
+
+def check_file_type(files):
+    for file in files:
+        if file.filename.endswith('.csv') == False:
+            raise UnicornException(name="Only csv files", status_code=404,
+                               details="User can only upload csv files")
