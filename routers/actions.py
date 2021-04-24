@@ -108,7 +108,7 @@ async def upload_two_files(response: Response,files:List = File(...)):
         return answer
 
     except:
-        raise HTTPException(status_code=500, detail="Something get wrong, check your settings again")
+        raise HTTPException(status_code=400, detail="Something get wrong, check your settings again")
 
     
 @router.post('/upload-saved')
@@ -135,7 +135,7 @@ async def union(request: Request):
     uuid = request.headers['uuid']
     targets = get_targets(properties,uuid)
     if len(targets) < 2:
-          raise HTTPException(status_code=500, detail="No " + properties['action'] +'`s found')
+          raise HTTPException(status_code=400, detail="No " + properties['action'] +'`s found')
     create_new_heatmap_from_targets(properties,targets,properties['data_work_on'],uuid)
     locations = prepar_md_locations(properties,uuid)
     new_data_location = f"upload_data/{uuid}/{properties['action']}.csv"
@@ -159,10 +159,23 @@ async def intersection(request: Request):
     uuid = request.headers['uuid']
     targets = get_targets(properties, uuid)
     if len(targets) < 2:
-        raise HTTPException(status_code=500, detail="No " + properties['action'] + '`s found')
+        raise HTTPException(status_code=400, detail="No " + properties['action'] + '`s found')
     create_new_heatmap_from_targets(properties, targets, properties['data_work_on'], uuid)
 
-    ##return heatmap_values
+    locations = prepar_md_locations(properties,uuid)
+    new_data_location = f"upload_data/{uuid}/{properties['action']}.csv"
+
+    md_location = prepar_md_locations(properties,uuid) ##check if there is any metdadata to add
+    if md_location != "": 
+    #    print(md_location)
+       properties['metadata'] = '1'
+
+    if properties['both1'] == 0:
+        heatmap_res = heatmap.create_heatmap_json(new_data_location,row_distance=properties['raw_distance'],row_linkage=properties['raw_linkage'],properties=properties,metadata=md_location)
+    else:
+        heatmap_res = heatmap.create_heatmap_json(new_data_location,row_distance=properties['raw_distance'],row_linkage=properties['raw_linkage'],column_distance=properties['column_distance'],column_linkage=properties['column_linkage'],properties=properties,metadata=md_location)
+  
+    return heatmap_res
 
 def prepar_md_locations(propperties,uuid):
     md_location=""
@@ -178,22 +191,47 @@ def prepar_md_locations(propperties,uuid):
 def get_targets(properties,uuid):
     data = pd.read_csv(f"upload_data/{uuid}/{properties['data_work_on']}"+"_connections.csv",names=['src','target'])
     targets = []
+    map_target= {}
     dic_data =  data.set_index('src').T.to_dict('list')
+    # print(dic_data.keys(),' <- dic_data.keys()')
     for src in properties['values']:
+        print(src,' <- src')
         if src in dic_data.keys():
            val =  dic_data[src][0] #maybe regex better
            val = val.replace("[", "")
            val = val.replace("]", "")
            val = val.replace("'", "")
-        if properties['action'] == 'union':
-           targets.extend((val.split(',')))
-        else:
-        #    print(targets)
-           targets = list(set(targets) & set(val.split(',')))
-           if len(targets) == 0:
-               return targets
-    return targets
+           if properties['action'] == 'union':
+              targets.extend((val.split(',')))
+              print('targets',targets)
+           else:
+              val = val.replace("[", "")
+              val = val.replace("]", "")
+              val = val.replace("'", "")
+              print('oneConection',val)
+              all_connections= val.split(',')
+              print('all_connections,',all_connections)
+              for conn in all_connections:
+                # print('connnnn',conn)
+                if conn.startswith(' '):
+                    conn= conn[1:]
+                if conn in map_target.keys():
+                    map_target[conn]=map_target[conn]+1
+                else:
+                    map_target[conn] = 1
+            #   print('map_target',map_target)
 
+    if properties['action'] == 'union':    
+        return targets
+    else:
+        for val in map_target.keys():
+            if map_target[val]>=2:
+                targets.append(val)
+                # print('val: ',val)
+                # print('map_target[val]: ',map_target[val])
+        # print(targets)
+        # print(len(targets))        
+        return targets        
 
 
 def create_new_heatmap_from_targets(properties,targets,choise,uuid):
