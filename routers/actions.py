@@ -203,14 +203,14 @@ def get_targets(properties,uuid):
            val = val.replace("'", "")
            if properties['action'] == 'union':
               targets.extend((val.split(',')))
-              print('targets',targets)
+            #   print('targets',targets)
            else:
               val = val.replace("[", "")
               val = val.replace("]", "")
               val = val.replace("'", "")
-              print('oneConection',val)
+            #   print('oneConection',val)
               all_connections= val.split(',')
-              print('all_connections,',all_connections)
+            #   print('all_connections,',all_connections)
               for conn in all_connections:
                 # print('connnnn',conn)
                 if conn.startswith(' '):
