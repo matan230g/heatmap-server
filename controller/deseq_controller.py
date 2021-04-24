@@ -88,18 +88,24 @@ def get_file_by_side(file_name,side,file_type='.csv'):
 def create_heat_map(properties_path,side,filtered_heatmap_path):
     with open(properties_path) as json_file:
         properties = json.load(json_file)
-    if side == '3' or side=='1':
+    if side=='3':
+        side=""
+        side1 ='1'
+        meta_data_key = "metadata"
+    elif side=='1':
         side="1"
+        side1 ='1'
         meta_data_key = "metadata"
     else:
         meta_data_key = "metadata"+side
+        side1 ='2'
 
     new_properties = {
         'raw_distance': properties['raw_distance' + side],
         'raw_linkage': properties['raw_linkage' + side],
         'column_distance': properties['column_distance' + side],
         'column_linkage': properties['column_linkage' + side],
-        'both1':properties['both' + side],
+        'both1':properties['both' + side1],
         'metadata':properties[meta_data_key]
     }
 
