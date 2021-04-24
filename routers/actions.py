@@ -1,5 +1,6 @@
 from typing import List
 from pydantic import BaseModel
+from routers.Unicorn_Exception import UnicornException
 from fastapi import APIRouter,Header,HTTPException,FastAPI, File, UploadFile,Response,Request
 import json
 import pandas as pd
@@ -20,6 +21,7 @@ router = APIRouter()
 async def upload_file(response: Response,files:List = File(...)):
     #try:
         properties = json.loads(files[len(files)-1])
+        check_file_type(files[:len(files)-1])
 
         rand_user_id = uuid.uuid4()
         # JUST FOR TEST TO AVOID A LOT OF FILES
@@ -41,6 +43,8 @@ async def upload_file(response: Response,files:List = File(...)):
         
         #RESPONSE TO CLIENT UUID
         response.headers["uuid"] = str(rand_user_id)
+
+        save_properties(properties,rand_user_id)
 
         json_map1 = json.loads(respone_heatmap)
         with open(f"upload_data/{str(rand_user_id)}/heatmap1.json", 'w') as fp:
@@ -64,6 +68,7 @@ async def save_current(request: Request):
 async def upload_two_files(response: Response,files:List = File(...)):
     try:
         properties = json.loads(files[len(files)-1])
+        check_file_type(files[:len(files)-1])
 
         rand_user_id = uuid.uuid4()
         # JUST FOR TEST TO AVOID A LOT OF FILES
@@ -84,7 +89,8 @@ async def upload_two_files(response: Response,files:List = File(...)):
 
         two_heatmap_properties(files_tuple,rand_user_id,files,filenames,locations_of_files,properties)
         copy_files(files_tuple)
-        
+        save_properties(properties,rand_user_id)
+
         first_to_second, second_to_first= create_connection_file(files[len(files)-2],rand_user_id)
 
         respone_first_heatmap = create_heat_map(properties,properites_first_map,locations_of_files)
@@ -130,27 +136,31 @@ async def upload_two_files(file: UploadFile = File(...)):
   
 @router.post('/union')
 async def union(request: Request):
-    properties = json.loads(await request.body())
-    properties['metdata'] = '0' 
-    uuid = request.headers['uuid']
-    targets = get_targets(properties,uuid)
-    if len(targets) < 2:
-          raise HTTPException(status_code=400, detail="No " + properties['action'] +'`s found')
-    create_new_heatmap_from_targets(properties,targets,properties['data_work_on'],uuid)
-    locations = prepar_md_locations(properties,uuid)
-    new_data_location = f"upload_data/{uuid}/{properties['action']}.csv"
+    try:
+        properties = json.loads(await request.body())
+        properties['metdata'] = '0' 
+        uuid = request.headers['uuid']
+        targets = get_targets(properties,uuid)
+        if len(targets) < 2:
+            raise HTTPException(status_code=400, detail="No " + properties['action'] +'`s found')
+        create_new_heatmap_from_targets(properties,targets,properties['data_work_on'],uuid)
+        locations = prepar_md_locations(properties,uuid)
+        new_data_location = f"upload_data/{uuid}/{properties['action']}.csv"
 
-    md_location = prepar_md_locations(properties,uuid) ##check if there is any metdadata to add
-    if md_location != "": 
-    #    print(md_location)
-       properties['metadata'] = '1'
+        md_location = prepar_md_locations(properties,uuid) ##check if there is any metdadata to add
+        if md_location != "": 
+        #    print(md_location)
+            properties['metadata'] = '1'
 
-    if properties['both1'] == 0:
-        heatmap_res = heatmap.create_heatmap_json(new_data_location,row_distance=properties['raw_distance'],row_linkage=properties['raw_linkage'],properties=properties,metadata=md_location)
-    else:
-        heatmap_res = heatmap.create_heatmap_json(new_data_location,row_distance=properties['raw_distance'],row_linkage=properties['raw_linkage'],column_distance=properties['column_distance'],column_linkage=properties['column_linkage'],properties=properties,metadata=md_location)
-  
-    return heatmap_res
+        if properties['both1'] == 0:
+            heatmap_res = heatmap.create_heatmap_json(new_data_location,row_distance=properties['raw_distance'],row_linkage=properties['raw_linkage'],properties=properties,metadata=md_location)
+        else:
+            heatmap_res = heatmap.create_heatmap_json(new_data_location,row_distance=properties['raw_distance'],row_linkage=properties['raw_linkage'],column_distance=properties['column_distance'],column_linkage=properties['column_linkage'],properties=properties,metadata=md_location)
+    
+        return heatmap_res
+
+    except:
+        raise HTTPException(status_code=500, detail="Error! Check your connection file")
 
 @router.post('/intersection')
 async def intersection(request: Request):
@@ -436,3 +446,14 @@ def copy_files_to_saved_dir(uuid, file_name):
     old_data_saved_location = f"upload_data/{uuid}"
     new_data_saved_location = f'saved_data/{uuid}/{file_name}'
     copy_tree(old_data_saved_location, new_data_saved_location)
+	
+
+def save_properties(properties,uuid):
+    with open(f"upload_data/{uuid}/properties.json", 'w') as f:
+        json.dump(properties, f)
+        
+def check_file_type(files):
+    for file in files:
+        if file.filename.endswith('.csv') == False:
+            raise UnicornException(name="Only csv files", status_code=404,
+                               details="User can only upload csv files")
