@@ -23,3 +23,5 @@ threadpoolctl==2.1.0
 typing-extensions==3.7.4.3
 urllib3==1.26.2
 uvicorn==0.13.3
+rpy2==3.4.3
+plotly==4.14.3

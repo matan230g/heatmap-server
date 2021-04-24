@@ -79,7 +79,8 @@ async def upload_two_files(response: Response,files:List = File(...)):
         # print(properties)
         # print('properties[compressed_value]',properties['compressed_value'])
 
-        properites_first_map = get_prop(properties,'file1','1','metadata1','raw_linkage','raw_distance','both1','column_linkage','column_distance', 'compress1', 'compressed_number','compressed_value')
+        # properites_first_map = get_prop(properties,'file1','1','metadata1','raw_linkage','raw_distance','both1','column_linkage','column_distance', 'compress1', 'compressed_number','compressed_value')
+        properites_first_map = get_prop(properties,'file1','1','metadata1','raw_linkage1','raw_distance1','both1','column_linkage1','column_distance1', 'compress1', 'compressed_number','compressed_value')
 
         two_heatmap_properties(files_tuple,rand_user_id,files,filenames,locations_of_files,properties)
         copy_files(files_tuple)
@@ -109,7 +110,6 @@ async def upload_two_files(response: Response,files:List = File(...)):
 
     except:
         raise HTTPException(status_code=400, detail="Something get wrong, check your settings again")
-
     
 @router.post('/upload-saved')
 async def upload_two_files(file: UploadFile = File(...)):
@@ -195,7 +195,7 @@ def get_targets(properties,uuid):
     dic_data =  data.set_index('src').T.to_dict('list')
     # print(dic_data.keys(),' <- dic_data.keys()')
     for src in properties['values']:
-        print(src,' <- src')
+        # print(src,' <- src')
         if src in dic_data.keys():
            val =  dic_data[src][0] #maybe regex better
            val = val.replace("[", "")
