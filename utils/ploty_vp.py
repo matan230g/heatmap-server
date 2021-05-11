@@ -77,6 +77,7 @@ class volcano_plot :
 
     # mathematical calculation for a column at the request of a user
     def column_operation(self,column,operation):
+        label=column
         if (operation == 'Log'):
             label = "-log10("+column+")"
             self.data[label] = self.data[column].apply(lambda x: -np.log10(x))

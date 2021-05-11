@@ -38,9 +38,6 @@ class py_DESeq2:
     def __init__(self, count_matrix, design_matrix, conditions, gene_column='id'):
         self.dds = None
         self.deseq_result = None
-        self.resLFC = None
-        self.comparison = None
-        self.normalized_count_matrix = None
         self.gene_column = gene_column
         self.gene_id = count_matrix[self.gene_column]
         self.count_matrix = pandas2ri.py2rpy(count_matrix.drop(gene_column, axis=1))
@@ -68,7 +65,6 @@ class py_DESeq2:
 
     # create a dataframe with the result
     def get_deseq_result(self, **kwargs):
-        # self.comparison = deseq.resultsNames(self.dds)
         self.deseq_result = deseq.results(self.dds, **kwargs)
         self.deseq_result = to_dataframe(self.deseq_result)
         self.deseq_result[self.gene_column] = self.gene_id.values

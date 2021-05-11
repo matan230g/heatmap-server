@@ -16,7 +16,8 @@ async def run_deseq(request :Request):
 
     design_matrix_file = get_file_by_side('design_matrix',side)
     count_matrix_file = get_file_by_side('heatmap',side)
-    deseq = deseq_controller.run_deseq_controller(design_matrix_file,count_matrix_file,uuid)
+    locations = [f"upload_data/{uuid}/{count_matrix_file}", f"upload_data/{uuid}/{ design_matrix_file}"]
+    deseq = deseq_controller.run_deseq_controller(locations)
     deseq_result = get_file_by_side('deseq_result',side)
     deseq.deseq_result.to_csv(f"upload_data/{uuid}/{deseq_result}",index=False)
     json_result =  deseq.deseq_result.to_json(orient='index')
@@ -33,7 +34,11 @@ async def deseq_volcano(request :Request):
     file_path = get_file_by_side('deseq_result',data['side'])
     output_path = get_file_by_side('plot_setting',data['side'],'.json')
     uuid = 'aae10d89-5fed-4fb4-b2d7-1ac709fb9534'
-    fig_json = deseq_controller.deseq_volcano_controller(data,file_path,output_path,uuid)
+
+    data_path = f"upload_data/{uuid}/{file_path}"
+    output_path = f"upload_data/{uuid}/{output_path}"
+    locations = [data_path,output_path]
+    fig_json = deseq_controller.deseq_volcano_controller(data,locations)
     return fig_json
 
 @router.post('/upload_data')
