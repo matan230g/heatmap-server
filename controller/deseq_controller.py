@@ -47,7 +47,7 @@ def deseq_volcano_controller(json_data,locations):
     return json_fig
 
 
-def filter_heatmap_controller(deseq_path,heatmap_path,plot_path,properties_path,side,filtered_heatmap_path,uuid):
+def filter_heatmap_controller(deseq_path,heatmap_path,plot_path,properties_path,side,values,filtered_heatmap_path,uuid):
     deseq_result = pd.read_csv(deseq_path,encoding='utf-8-sig')
     with open(plot_path) as json_file:
         plot_settings = json.load(json_file)
@@ -62,7 +62,9 @@ def filter_heatmap_controller(deseq_path,heatmap_path,plot_path,properties_path,
                                        y_column = y_column,x_column = x_column,title=title)
     deseq_result.dropna(inplace=True)
     deseq_result = volcano_plot.add_color_by_condition()
-    deseq_result = deseq_result[deseq_result['color'] != 'Normal']
+    values = values.split(',')
+    boolean_series = deseq_result.color.isin(values)
+    deseq_result = deseq_result[boolean_series]
     volcano_plot.data = deseq_result
     filter_values = deseq_result['id'].values
     heatmap_df = pd.read_csv(heatmap_path,encoding='utf-8-sig')
@@ -98,7 +100,11 @@ def create_heat_map(properties_path,side,filtered_heatmap_path):
         'column_distance': properties['column_distance' + side],
         'column_linkage': properties['column_linkage' + side],
         'both1':properties['both' + side1],
-        'metadata':properties[meta_data_key]
+        'metadata':properties[meta_data_key],
+        'range_min':properties['range_min'+side1],
+        'range_max': properties['range_max'+side1],
+        'norm_type': properties['norm_type'+side1]
+
     }
 
     heatmap_res = heatmap.create_heatmap_json(filtered_heatmap_path, metadata=properties[meta_data_key],

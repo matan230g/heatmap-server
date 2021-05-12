@@ -39,6 +39,10 @@ async def upload_file(response: Response,files:List = File(...)):
         copy_files(files_tuple)
 
         #USE INCHLIB LIBRARY
+        properties['range_min'] = properties['range_min1']
+        properties['range_max'] = properties['range_max1']
+        properties['norm_type'] = properties['norm_type1']
+
         respone_heatmap = create_heat_map(properties,properties,locations_of_files)
         
         #RESPONSE TO CLIENT UUID
@@ -85,7 +89,7 @@ async def upload_two_files(response: Response,files:List = File(...)):
         # print('properties[compressed_value]',properties['compressed_value'])
 
         # properites_first_map = get_prop(properties,'file1','1','metadata1','raw_linkage','raw_distance','both1','column_linkage','column_distance', 'compress1', 'compressed_number','compressed_value')
-        properites_first_map = get_prop(properties,'file1','1','metadata1','raw_linkage1','raw_distance1','both1','column_linkage1','column_distance1', 'compress1', 'compressed_number','compressed_value')
+        properites_first_map = get_prop(properties,'file1','1','metadata1','raw_linkage1','raw_distance1','both1','column_linkage1','column_distance1', 'compress1', 'compressed_number','compressed_value','1')
 
         two_heatmap_properties(files_tuple,rand_user_id,files,filenames,locations_of_files,properties)
         copy_files(files_tuple)
@@ -95,7 +99,7 @@ async def upload_two_files(response: Response,files:List = File(...)):
 
         respone_first_heatmap = create_heat_map(properties,properites_first_map,locations_of_files)
 
-        properites_second_map = get_prop(properties,'file2','2','metadata2','raw_linkage2','raw_distance2','both2','column_linkage2','column_distance2','compress2','compressed_number2', 'compressed_value2')
+        properites_second_map = get_prop(properties,'file2','2','metadata2','raw_linkage2','raw_distance2','both2','column_linkage2','column_distance2','compress2','compressed_number2', 'compressed_value2','2')
         respone_second_heatmap = create_heat_map(properties,properites_second_map,locations_of_files)
 
         answer = {"first": respone_first_heatmap, "second": respone_second_heatmap,
@@ -310,7 +314,7 @@ def copy_files(files):
         with open(file_location, "wb+") as file_object:
             shutil.copyfileobj(file[0].file, file_object) 
 
-def get_prop(properties,file, file_num,metadata,raw_linkage,raw_distance,both,column_linkage,column_distance, compress, compressed_number, compressed_value):
+def get_prop(properties,file, file_num,metadata,raw_linkage,raw_distance,both,column_linkage,column_distance, compress, compressed_number, compressed_value,heatmap_num):
     
     properties_edit ={}
     properties_edit['file'] = properties[file]
@@ -318,6 +322,10 @@ def get_prop(properties,file, file_num,metadata,raw_linkage,raw_distance,both,co
     properties_edit[metadata] = properties[metadata]
     properties_edit['raw_linkage'] = properties[raw_linkage]
     properties_edit['raw_distance'] = properties[raw_distance]
+
+    properties_edit['range_min'] = properties['range_min'+heatmap_num]
+    properties_edit['range_max'] = properties['range_max'+heatmap_num]
+    properties_edit['norm_type'] = properties['norm_type'+heatmap_num]
 
     if properties[both] == 1:
         properties_edit[both] = 1

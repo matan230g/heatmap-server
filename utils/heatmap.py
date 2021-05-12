@@ -17,7 +17,11 @@ def create_heatmap_json(data,**kwargs):
     # c.read_data(data, header=bool, missing_value=str/False, datatype="numeric/binary") use read_data() for list of lists instead of a data file
 
     # normalize data to (0,1) scale, but after clustering write the original data to the heatmap
-    c.normalize_data(feature_range=(0,1), write_original=True)
+
+    min = properties['range_min']
+    max = properties['range_max']
+    feature_range =(min,max)
+    c.normalize_data(feature_range=feature_range, write_original=True,norm_type=properties['norm_type'])
 
     # cluster data according to the parameters
     if properties[bothId] == 1:
