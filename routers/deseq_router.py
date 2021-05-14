@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse
 import pandas as pd
 from controller import deseq_controller
 from routers.Unicorn_Exception import UnicornException
+from routers.actions import check_file_type
 
 router = APIRouter()
 
@@ -51,13 +52,10 @@ async def upload_data(request: Request):
         file=data['files']
         file_name = get_file_by_side('design_matrix',side)
         uuid='aae10d89-5fed-4fb4-b2d7-1ac709fb9534'
-        if file.filename.endswith('.csv'):
-            with open(f"upload_data/{uuid}/{file_name}", "wb+") as file_object:
-                file_object.write(file.file.read())
-                file_object.close()
-        else:
-            raise UnicornException(name="Only csv files", status_code=404,
-                                    details="User can only upload csv files")
+        check_file_type([file])
+        with open(f"upload_data/{uuid}/{file_name}", "wb+") as file_object:
+            file_object.write(file.file.read())
+            file_object.close()
 
 @router.get('/get_deseq_result')
 async def get_files_names(request: Request):

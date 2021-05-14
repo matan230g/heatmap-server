@@ -18,10 +18,8 @@ def create_heatmap_json(data,**kwargs):
 
     # normalize data to (0,1) scale, but after clustering write the original data to the heatmap
 
-    min = properties['range_min']
-    max = properties['range_max']
-    feature_range =(min,max)
-    c.normalize_data(feature_range=feature_range, write_original=True,norm_type=properties['norm_type'])
+    base = int(properties['base'])
+    c.normalize_data(feature_range=base, write_original=True,norm_type=properties['norm_type'])
 
     # cluster data according to the parameters
     if properties[bothId] == 1:
@@ -52,7 +50,7 @@ def create_heatmap_json_without_cluster(data,**kwargs):
     c.read_data(data,header=True, datatype="numeric")
 
     # normalize data to (0,1) scale, but after clustering write the original data to the heatmap
-    c.normalize_data(feature_range=(0,1), write_original=True)
+    c.normalize_data(feature_range=10, write_original=True)
 
     c.cluster_data(row_distance="euclidean", row_linkage="average", axis="row")
 

@@ -41,7 +41,11 @@ class py_DESeq2:
         self.normalized_count_matrix = None
         self.gene_column = gene_column
         self.gene_id = count_matrix[self.gene_column]
-        self.count_matrix = pandas2ri.py2rpy(count_matrix.drop(gene_column, axis=1))
+        count_matrix = count_matrix.drop(gene_column, axis=1)
+        count_matrix = count_matrix.astype(int)
+        self.columns = count_matrix.columns.tolist()
+        self.count_matrix = pandas2ri.py2rpy(count_matrix)
+
         # create design formula for the analysis
         design_formula = "~ "
         for col in conditions:
@@ -65,10 +69,19 @@ class py_DESeq2:
         self.dds = deseq.DESeq(self.dds, **kwargs)
         self.normalized_count_matrix = deseq.counts_DESeqDataSet(self.dds, normalized=True)
 
+
     # create a dataframe with the result
     def get_deseq_result(self, **kwargs):
         self.deseq_result = deseq.results(self.dds, **kwargs)
         self.deseq_result = to_dataframe(self.deseq_result)
+        columns = [self.gene_column]
+        data_columns = self.deseq_result.columns.tolist()
+        columns.extend(data_columns)
         self.deseq_result[self.gene_column] = self.gene_id.values
+        self.deseq_result = self.deseq_result[columns]
         self.normalized_count_matrix =to_dataframe(self.normalized_count_matrix)
+        self.normalized_count_matrix.columns = self.columns
+        columns = [self.gene_column]
+        columns.extend(self.columns)
         self.normalized_count_matrix[self.gene_column] = self.gene_id.values
+        self.normalized_count_matrix = self.normalized_count_matrix[columns]

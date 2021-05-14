@@ -1,5 +1,7 @@
 import plotly.express as px
 import numpy as np
+from routers.Unicorn_Exception import UnicornException
+
 
 class volcano_plot :
 
@@ -35,6 +37,9 @@ class volcano_plot :
 
     #
     def __init__(self,data,x_th,y_th,x_operation = None,y_operation='Log',y_column="pvalue",x_column="log2FoldChange",title='volcano_plot'):
+        if len(data)==0:
+            raise UnicornException(name="Empty data", status_code=404,
+                                   details="Bad request, the data is empty")
         self.data = data
         self.x_th = float(x_th)
         self.y_th = float(y_th)

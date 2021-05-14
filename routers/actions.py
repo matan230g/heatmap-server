@@ -1,5 +1,6 @@
 from typing import List
 from pydantic import BaseModel
+from controller import deseq_controller
 from routers.Unicorn_Exception import UnicornException
 from fastapi import APIRouter,Header,HTTPException,FastAPI, File, UploadFile,Response,Request
 import json
@@ -37,10 +38,11 @@ async def upload_file(response: Response,files:List = File(...)):
 
         one_heatmap_properties(files_tuple,rand_user_id,files,filenames,locations_of_files,properties) 
         copy_files(files_tuple)
-
+        deseq_normalization = properties['deseq_normalization1']
+        if deseq_normalization:
+            deseq_controller.deseq_normalization(locations_of_files['heatmap1'])
         #USE INCHLIB LIBRARY
-        properties['range_min'] = properties['range_min1']
-        properties['range_max'] = properties['range_max1']
+        properties['base'] = properties['base1']
         properties['norm_type'] = properties['norm_type1']
 
         respone_heatmap = create_heat_map(properties,properties,locations_of_files)
@@ -93,6 +95,15 @@ async def upload_two_files(response: Response,files:List = File(...)):
 
         two_heatmap_properties(files_tuple,rand_user_id,files,filenames,locations_of_files,properties)
         copy_files(files_tuple)
+        deseq_normalization = properties['deseq_normalization1']
+        if deseq_normalization:
+            deseq_controller.deseq_normalization(locations_of_files['heatmap1'])
+
+        deseq_normalization = properties['deseq_normalization2']
+        deseq_normalization = True
+        if deseq_normalization:
+            deseq_controller.deseq_normalization(locations_of_files['heatmap2'])
+
         save_properties(properties,rand_user_id)
 
         first_to_second, second_to_first= create_connection_file(files[len(files)-2],rand_user_id)
@@ -144,6 +155,15 @@ async def union(request: Request):
         properties = json.loads(await request.body())
         properties['metdata'] = '0' 
         uuid = request.headers['uuid']
+        f = open(f"upload_data/{uuid}/properties.json")
+        prop_data = json.load(f)
+        if properties['data_work_on'] =='first_second':
+            properties['base'] = prop_data['base1']
+            properties['norm_type'] = prop_data['norm_type1']
+        else:
+            properties['base'] = prop_data['base2']
+            properties['norm_type'] = prop_data['norm_type2']
+
         targets = get_targets(properties,uuid)
         if len(targets) < 2:
             raise HTTPException(status_code=400, detail="No " + properties['action'] +'`s found')
@@ -171,6 +191,14 @@ async def intersection(request: Request):
     properties = json.loads(await request.body())
     properties['metdata'] = '0'
     uuid = request.headers['uuid']
+    f = open(f"upload_data/{uuid}/properties.json")
+    prop_data = json.load(f)
+    if properties['data_work_on'] == 'first_second':
+        properties['base'] = prop_data['base1']
+        properties['norm_type'] = prop_data['norm_type1']
+    else:
+        properties['base'] = prop_data['base2']
+        properties['norm_type'] = prop_data['norm_type2']
     targets = get_targets(properties, uuid)
     if len(targets) < 2:
         raise HTTPException(status_code=400, detail="No " + properties['action'] + '`s found')
@@ -323,8 +351,7 @@ def get_prop(properties,file, file_num,metadata,raw_linkage,raw_distance,both,co
     properties_edit['raw_linkage'] = properties[raw_linkage]
     properties_edit['raw_distance'] = properties[raw_distance]
 
-    properties_edit['range_min'] = properties['range_min'+heatmap_num]
-    properties_edit['range_max'] = properties['range_max'+heatmap_num]
+    properties_edit['base'] = properties['base'+heatmap_num]
     properties_edit['norm_type'] = properties['norm_type'+heatmap_num]
 
     if properties[both] == 1:
@@ -464,4 +491,13 @@ def check_file_type(files):
     for file in files:
         if file.filename.endswith('.csv') == False:
             raise UnicornException(name="Only csv files", status_code=404,
-                               details="User can only upload csv files")
+                               details=f"User can only upload csv files, {file.filename}")
+        # seek to the end of the file
+        file.file.seek(0,2)
+        file_size = file.file.tell()
+        # Reset the file position to the beginning
+        file.file.seek(0)
+        if file_size > 2000000000:
+            raise UnicornException(name="File too big", status_code=404,
+                                   details=f"File {file.filename} is too big, maximum file size 2GB")
+

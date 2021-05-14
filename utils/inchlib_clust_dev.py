@@ -1,8 +1,9 @@
 from __future__ import print_function
+import pandas as pd
+import csv, json, copy, argparse, os, requests
+from routers.Unicorn_Exception import UnicornException
 
-import csv, json, copy, re, argparse, os, requests
-
-import numpy, scipy, fastcluster, sklearn, jsmin
+import numpy, scipy, fastcluster,jsmin
 import scipy.cluster.hierarchy as hcluster
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.impute import SimpleImputer
@@ -553,15 +554,20 @@ class Cluster():
 
         return imputed_data, missing_values_indexes
         
-    def normalize_data(self, feature_range=(0,1), write_original=False,norm_type='Z-Score'):
+    def normalize_data(self, feature_range=10, write_original=False,norm_type='Z-Score'):
         """Normalizes data to a scale from 0 to 1. When write_original is set to True, 
         the normalized data will be clustered, but original data will be written to the heatmap."""
         self.write_original = write_original
-        if norm_type =="MinMaxScaler":
-            min_max_scaler = MinMaxScaler(feature_range)
-            self.data = min_max_scaler.fit_transform(self.data)
+        if norm_type =="Log":
+            if feature_range <=1:
+                raise UnicornException(name="Normalization error", status_code=404,
+                                       details="Bad value for logrtimic base, base must be bigger than 1")
+            self.data = numpy.log1p(self.data) / numpy.log(feature_range)
         elif norm_type == 'Z-Score':
-            self.data = scipy.stats.zscore(self.data)
+            self.data = scipy.stats.zscore(self.data,axis=1)
+            self.data = pd.DataFrame(self.data)
+            self.data.fillna(0,inplace=True)
+            self.data = self.data.values
         self.data = [[round(v, 3) for v in row] for row in self.data]
 
     def cluster_data(self, row_distance="euclidean", row_linkage="single", axis="row", column_distance="euclidean", column_linkage="ward"):

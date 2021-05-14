@@ -62,7 +62,12 @@ def filter_heatmap_controller(deseq_path,heatmap_path,plot_path,properties_path,
                                        y_column = y_column,x_column = x_column,title=title)
     deseq_result.dropna(inplace=True)
     deseq_result = volcano_plot.add_color_by_condition()
+
     values = values.split(',')
+    values =[val for val in values if val != '']
+    if len(values)>=3 or len(values) <=0:
+        raise UnicornException(name="Filter dataframe", status_code=404,
+                               details=f'The number of filters is not legal, number of filters is {len(values)}')
     boolean_series = deseq_result.color.isin(values)
     deseq_result = deseq_result[boolean_series]
     volcano_plot.data = deseq_result
@@ -101,8 +106,8 @@ def create_heat_map(properties_path,side,filtered_heatmap_path):
         'column_linkage': properties['column_linkage' + side],
         'both1':properties['both' + side1],
         'metadata':properties[meta_data_key],
-        'range_min':properties['range_min'+side1],
-        'range_max': properties['range_max'+side1],
+        'base':properties['base'+side1],
+        'deseq_normalization':properties['deseq_normalization'+side1],
         'norm_type': properties['norm_type'+side1]
 
     }
@@ -110,3 +115,24 @@ def create_heat_map(properties_path,side,filtered_heatmap_path):
     heatmap_res = heatmap.create_heatmap_json(filtered_heatmap_path, metadata=properties[meta_data_key],
                                           properties=new_properties)
     return heatmap_res
+
+def deseq_normalization(path_data):
+    data = pd.read_csv(path_data)
+    columns = data.columns.tolist()
+    if columns.count('id') == 0:
+        raise UnicornException(name="Bad Request", status_code=404,
+                               details="Bad request, count matrix must contains column with id name")
+    columns.remove('id')
+    design_matrix = pd.DataFrame()
+    design_matrix['id'] = columns
+    conditions = ['C'for i in range(len(columns))]
+    conditions[0] = 'H'
+    design_matrix['condition'] = conditions
+    conditions =['condition']
+    deseq = Deseq.py_DESeq2(data,design_matrix,conditions)
+    deseq.run_deseq()
+    deseq.get_deseq_result()
+    data = deseq.normalized_count_matrix
+    data.to_csv(path_data,index=False)
+
+
