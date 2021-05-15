@@ -20,7 +20,7 @@ router = APIRouter()
 
 @router.post('/uploadone')
 async def upload_file(response: Response,files:List = File(...)):
-    #try:
+    try:
         properties = json.loads(files[len(files)-1])
         check_file_type(files[:len(files)-1])
 
@@ -55,10 +55,13 @@ async def upload_file(response: Response,files:List = File(...)):
         json_map1 = json.loads(respone_heatmap)
         with open(f"upload_data/{str(rand_user_id)}/heatmap1.json", 'w') as fp:
             json.dump(json_map1, fp)
-    #except:
-         #raise HTTPException(status_code=500, detail="Something get wrong, check your settings again")
-        
+
         return respone_heatmap
+
+    except:
+        raise UnicornException(name="bla",status_code=404,
+                               details='Something went wrong. Check your data.')
+
 
 
 @router.post('/save')

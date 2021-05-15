@@ -13,18 +13,22 @@ def run_deseq_controller(locations):
     dm_columns = [str(c) for c in design_matrix.columns.tolist()]
     cm_columns = [str(c) for c in count_matrix.columns.tolist()]
     if cm_columns.count('id') ==0:
-        raise UnicornException(name="Bad Request",status_code=404,
-                               details="Bad request, count matrix must contains column with id name")
+        raise UnicornException(name="Bad request",status_code=404,
+                               details="count matrix must contains column with id name")
     if dm_columns.count('id') == 0:
-        raise UnicornException(name="Bad Request", status_code=404,
-                                details="Bad request, design matrix must contains column with id name")
+        raise UnicornException(name="Bad request", status_code=404,
+                                details="design matrix must contains column with id name")
     conditions =list(design_matrix.columns.values)
     if conditions is None or len(conditions)<=1 :
         raise UnicornException(name="Bad request",status_code=404, details='There are no conditions in the design matrix, please check that the files are edited according to the request format')
     conditions.remove('id')
-    deseq = Deseq.py_DESeq2(count_matrix,design_matrix,conditions,'id')
-    deseq.run_deseq()
-    deseq.get_deseq_result()
+    try:
+        deseq = Deseq.py_DESeq2(count_matrix,design_matrix,conditions,'id')
+        deseq.run_deseq()
+        deseq.get_deseq_result()
+    except:
+        raise UnicornException(name="Bad request", status_code=404,
+                               details='Some error occured. Check you design matrix file.')
     return deseq
 
 def deseq_volcano_controller(json_data,locations):
