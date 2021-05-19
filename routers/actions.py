@@ -44,6 +44,7 @@ async def upload_file(response: Response,files:List = File(...)):
         #USE INCHLIB LIBRARY
         properties['base'] = properties['base1']
         properties['norm_type'] = properties['norm_type1']
+        properties['compress'] = properties['compress1']
 
         respone_heatmap = create_heat_map(properties,properties,locations_of_files)
         
@@ -90,12 +91,10 @@ async def upload_two_files(response: Response,files:List = File(...)):
 
         prepare_file(rand_user_id) 
         properties['metadata1']=properties['metadata']
-        # print(properties)
         # print('properties[compressed_value]',properties['compressed_value'])
 
-        # properites_first_map = get_prop(properties,'file1','1','metadata1','raw_linkage','raw_distance','both1','column_linkage','column_distance', 'compress1', 'compressed_number','compressed_value')
         properites_first_map = get_prop(properties,'file1','1','metadata1','raw_linkage1','raw_distance1','both1','column_linkage1','column_distance1', 'compress1', 'compressed_number','compressed_value','1')
-
+        properites_first_map['compress'] = properites_first_map['compress1']
         two_heatmap_properties(files_tuple,rand_user_id,files,filenames,locations_of_files,properties)
         copy_files(files_tuple)
         deseq_normalization = properties['deseq_normalization1']
@@ -103,7 +102,6 @@ async def upload_two_files(response: Response,files:List = File(...)):
             deseq_controller.deseq_normalization(locations_of_files['heatmap1'])
 
         deseq_normalization = properties['deseq_normalization2']
-        deseq_normalization = True
         if deseq_normalization:
             deseq_controller.deseq_normalization(locations_of_files['heatmap2'])
 
@@ -114,6 +112,9 @@ async def upload_two_files(response: Response,files:List = File(...)):
         respone_first_heatmap = create_heat_map(properties,properites_first_map,locations_of_files)
 
         properites_second_map = get_prop(properties,'file2','2','metadata2','raw_linkage2','raw_distance2','both2','column_linkage2','column_distance2','compress2','compressed_number2', 'compressed_value2','2')
+        properites_second_map['compress'] = properites_second_map['compress2']
+
+
         respone_second_heatmap = create_heat_map(properties,properites_second_map,locations_of_files)
 
         answer = {"first": respone_first_heatmap, "second": respone_second_heatmap,
@@ -132,7 +133,8 @@ async def upload_two_files(response: Response,files:List = File(...)):
 
         return answer
 
-    except:
+    except Exception as exc:
+        print(exc)
         raise HTTPException(status_code=400, detail="Something get wrong, check your settings again")
     
 @router.post('/upload-saved')
@@ -156,7 +158,8 @@ async def upload_two_files(file: UploadFile = File(...)):
 async def union(request: Request):
     try:
         properties = json.loads(await request.body())
-        properties['metdata'] = '0' 
+        properties['metdata'] = '0'
+        properties['compress'] = properties['compress1']
         uuid = request.headers['uuid']
         f = open(f"upload_data/{uuid}/properties.json")
         prop_data = json.load(f)
@@ -176,9 +179,7 @@ async def union(request: Request):
 
         md_location = prepar_md_locations(properties,uuid) ##check if there is any metdadata to add
         if md_location != "": 
-        #    print(md_location)
             properties['metadata'] = '1'
-
         if properties['both1'] == 0:
             heatmap_res = heatmap.create_heatmap_json(new_data_location,row_distance=properties['raw_distance'],row_linkage=properties['raw_linkage'],properties=properties,metadata=md_location)
         else:
@@ -193,6 +194,7 @@ async def union(request: Request):
 async def intersection(request: Request):
     properties = json.loads(await request.body())
     properties['metdata'] = '0'
+    properties['compress'] = properties['compress1']
     uuid = request.headers['uuid']
     f = open(f"upload_data/{uuid}/properties.json")
     prop_data = json.load(f)
@@ -212,7 +214,6 @@ async def intersection(request: Request):
 
     md_location = prepar_md_locations(properties,uuid) ##check if there is any metdadata to add
     if md_location != "": 
-    #    print(md_location)
        properties['metadata'] = '1'
 
     if properties['both1'] == 0:
@@ -221,6 +222,22 @@ async def intersection(request: Request):
         heatmap_res = heatmap.create_heatmap_json(new_data_location,row_distance=properties['raw_distance'],row_linkage=properties['raw_linkage'],column_distance=properties['column_distance'],column_linkage=properties['column_linkage'],properties=properties,metadata=md_location)
   
     return heatmap_res
+
+
+@router.get('/reset_default')
+async def reset_default(request: Request):
+    # uuid = request.headers['uuid']
+    uuid = 'aae10d89-5fed-4fb4-b2d7-1ac709fb9534'
+    params = request.query_params
+    side = params['side']
+    if side=='map1':
+        heatmap_file='heatmap1.json'
+    else:
+        heatmap_file = 'heatmap2.json'
+    heatmap_path = f"upload_data/{uuid}/{heatmap_file}"
+    with open(heatmap_path) as json_file:
+        heatmap = json.load(json_file)
+    return {'heatmap' : heatmap}
 
 def prepar_md_locations(propperties,uuid):
     md_location=""
@@ -238,9 +255,7 @@ def get_targets(properties,uuid):
     targets = []
     map_target= {}
     dic_data =  data.set_index('src').T.to_dict('list')
-    # print(dic_data.keys(),' <- dic_data.keys()')
     for src in properties['values']:
-        # print(src,' <- src')
         if src in dic_data.keys():
            val =  dic_data[src][0] #maybe regex better
            val = val.replace("[", "")
@@ -253,18 +268,14 @@ def get_targets(properties,uuid):
               val = val.replace("[", "")
               val = val.replace("]", "")
               val = val.replace("'", "")
-            #   print('oneConection',val)
               all_connections= val.split(',')
-            #   print('all_connections,',all_connections)
               for conn in all_connections:
-                # print('connnnn',conn)
                 if conn.startswith(' '):
                     conn= conn[1:]
                 if conn in map_target.keys():
                     map_target[conn]=map_target[conn]+1
                 else:
                     map_target[conn] = 1
-            #   print('map_target',map_target)
 
     if properties['action'] == 'union':    
         return targets
@@ -363,26 +374,17 @@ def get_prop(properties,file, file_num,metadata,raw_linkage,raw_distance,both,co
         properties_edit['column_distance'] = properties[column_distance] 
     else:
         properties_edit[both] = 0
-
-    # print('compress: ',compress)
-    # print('properties[compress]: ',properties[compress])
-
     if properties[compress] == 1:
         properties_edit[compress] = 1
-        # print('properties[compressed_number]: ',properties[compressed_number])
-        # print('properties[compressed_value] : ',properties[compressed_value] )
 
         properties_edit['compressed_number'] = properties[compressed_number]
         properties_edit['compressed_value'] = properties[compressed_value] 
     else:
         properties_edit[compress] = 0
-    # print('properties_edit: ',properties_edit)    
     return properties_edit
 
 def create_heat_map(original_propperties, heatmap_propperties,locations_of_files):
 
-    # print('original_propperties: ' ,original_propperties)
-    # print('heatmap_propperties: ' ,heatmap_propperties)
     try:
         map_num= int(heatmap_propperties['file_num']);
         heatmapId= 'heatmap'+str(map_num)
@@ -397,20 +399,13 @@ def create_heat_map(original_propperties, heatmap_propperties,locations_of_files
         bothId= 'both1'
         compressId= 'compress1'
 
-
-    # print('heatmap_proppertiesssss',heatmap_propperties)
     if heatmap_propperties[metadataId] =='1':
         if original_propperties[bothId] == 1:
             heatmap_res = heatmap.create_heatmap_json(locations_of_files[heatmapId],metadata=locations_of_files[metadataId],row_distance=heatmap_propperties['raw_distance'],row_linkage=heatmap_propperties['raw_linkage'],column_distance=heatmap_propperties['column_distance'],column_linkage=heatmap_propperties['column_linkage'],properties=heatmap_propperties)
         else:
-            # print('map_nummmmmm', map_num)
-            # print('heatmapId', locations_of_files[heatmapId])
-            # print('metadataaaaa ', locations_of_files[metadataId])
             heatmap_res = heatmap.create_heatmap_json(locations_of_files[heatmapId],metadata=locations_of_files[metadataId],row_distance=heatmap_propperties['raw_distance'],row_linkage=heatmap_propperties['raw_linkage'],properties=heatmap_propperties)
-            # print('heatmap_ressss:',heatmap_res)
     else:
         if original_propperties[bothId] == 1:
-            # print('where is column_distance- original_propperties:', original_propperties)
             heatmap_res = heatmap.create_heatmap_json(locations_of_files[heatmapId],row_distance=heatmap_propperties['raw_distance'],row_linkage=heatmap_propperties['raw_linkage'],column_distance=heatmap_propperties['column_distance'],column_linkage=heatmap_propperties['column_linkage'],properties=heatmap_propperties)
         else:
             heatmap_res = heatmap.create_heatmap_json(locations_of_files[heatmapId],row_distance=heatmap_propperties['raw_distance'],row_linkage=heatmap_propperties['raw_linkage'],properties=heatmap_propperties)
@@ -429,7 +424,7 @@ def create_connection_file(file,id):
     def addToDict(dict_to_add, key, val_instance_to_add ):
         val_list=[]
         if key in dict_to_add.keys():
-            val_list= dict_to_add.get(key)
+            val_list = dict_to_add.get(key)
         else:
             val_list=[]
         val_list.append(val_instance_to_add)
@@ -460,8 +455,6 @@ def create_connection_file(file,id):
 
     create_connection_file(f'upload_data/{id}/first_second_connections.csv',first_to_second)
     create_connection_file(f'upload_data/{id}/second_first_connections.csv',second_to_first)
-    
-    
     return first_to_second, second_to_first
 
 
