@@ -25,10 +25,6 @@ async def upload_file(response: Response,files:List = File(...)):
         check_file_type(files[:len(files)-1])
 
         rand_user_id = uuid.uuid4()
-        # JUST FOR TEST TO AVOID A LOT OF FILES
-        #
-        rand_user_id='aae10d89-5fed-4fb4-b2d7-1ac709fb9534'
-        #
         files_tuple = []
         filenames = []
         locations_of_files = {}
@@ -81,10 +77,7 @@ async def upload_two_files(response: Response,files:List = File(...)):
         check_file_type(files[:len(files)-1])
 
         rand_user_id = uuid.uuid4()
-        # JUST FOR TEST TO AVOID A LOT OF FILES
-        #
-        rand_user_id='aae10d89-5fed-4fb4-b2d7-1ac709fb9534'
-        #
+
         files_tuple = []
         filenames = []
         locations_of_files = {}
@@ -226,8 +219,7 @@ async def intersection(request: Request):
 
 @router.get('/reset_default')
 async def reset_default(request: Request):
-    # uuid = request.headers['uuid']
-    uuid = 'aae10d89-5fed-4fb4-b2d7-1ac709fb9534'
+    uuid = request.headers['uuid']
     params = request.query_params
     side = params['side']
     if side=='map1':
@@ -477,7 +469,7 @@ def copy_files_to_saved_dir(uuid, file_name):
     old_data_saved_location = f"upload_data/{uuid}"
     new_data_saved_location = f'saved_data/{uuid}/{file_name}'
     copy_tree(old_data_saved_location, new_data_saved_location)
-	
+
 
 def save_properties(properties,uuid):
     with open(f"upload_data/{uuid}/properties.json", 'w') as f:
