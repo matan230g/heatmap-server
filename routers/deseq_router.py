@@ -65,7 +65,6 @@ async def filter_heatmap(request: Request):
     params = request.query_params
     side = params['side']
     values = params['values']
-    uuid = 'aae10d89-5fed-4fb4-b2d7-1ac709fb9534'
     deseq_file = get_file_by_side('deseq_result',side)
     heatmap_file = get_file_by_side('heatmap',side)
     plot_setting_file = get_file_by_side('plot_setting',side,'.json')
