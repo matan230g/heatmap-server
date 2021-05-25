@@ -112,9 +112,15 @@ def create_heat_map(properties_path,side,filtered_heatmap_path):
         'metadata':properties[meta_data_key],
         'base':properties['base'+side1],
         'deseq_normalization':properties['deseq_normalization'+side1],
-        'norm_type': properties['norm_type'+side1]
-
+        'norm_type': properties['norm_type'+side1],
+        'compress': int(properties['compress'+side1])
     }
+    if new_properties['compress'] == 1:
+        if side == '1':
+            side=""
+        new_properties['compressed_number'] = properties['compressed_number'+side]
+        new_properties['compressed_value'] = properties['compressed_value'+side]
+
 
     heatmap_res = heatmap.create_heatmap_json(filtered_heatmap_path, metadata=properties[meta_data_key],
                                           properties=new_properties)

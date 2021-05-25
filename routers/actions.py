@@ -55,8 +55,9 @@ async def upload_file(response: Response,files:List = File(...)):
 
         return respone_heatmap
 
-    except:
-        raise UnicornException(name="bla",status_code=404,
+    except Exception as exc:
+        print(exc)
+        raise UnicornException(name="Server-Error",status_code=404,
                                details='Something went wrong. Check your data.')
 
 
