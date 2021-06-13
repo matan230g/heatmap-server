@@ -1,4 +1,23 @@
 from utils import inchlib_clust_dev as inchlib_clust
+
+'''
+    create a json file containing the details of the heatmap in order to draw it on client side.
+    params:
+        * data - path to csv file contains the relevent data
+        * properties - dictionary contains all params 
+            * raw_distance - string, for clustering 
+            * raw_linkage - string, for clustering
+            * column_distane - string, for clustering
+            * column_linkage - string, for clustering
+            * base - int, for log normalization 
+            * norm_type - string, which normalization to use
+            * compress - int, 0/1 if to do compress
+            * compress_number - int, size of the cluster
+            * compress_value - string compress type
+            * file_num - int, file side
+            * metadata - int 0/1 if to use metadata file
+'''
+
 def create_heatmap_json(data,**kwargs):
     properties = kwargs.pop('properties')
     try:
@@ -50,23 +69,3 @@ def create_heatmap_json(data,**kwargs):
     # export the cluster heatmap on the standard output or to the file if filename specified
     return d.export_cluster_heatmap_as_json()
 
-
-def create_heatmap_json_without_cluster(data,**kwargs):
-    csv = kwargs.pop('csv')
-    #instantiate the Cluster object
-    c = inchlib_clust.Cluster()
-    # read csv data file with specified delimiter, also specify whether there is a header row, the type of the data (numeric/binary) and the string representation of missing/unknown values
-    c.read_data(data,header=True, datatype="numeric")
-
-    # normalize data to (0,1) scale, but after clustering write the original data to the heatmap
-    c.normalize_data(feature_range=10, write_original=True)
-
-    c.cluster_data(row_distance="euclidean", row_linkage="average", axis="row")
-
-    d = inchlib_clust.Dendrogram(c)
-
-
-    d.create_cluster_heatmap(compress=False, compressed_value="median", write_data=True)
-
- 
-    return d.export_cluster_heatmap_as_json()

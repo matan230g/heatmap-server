@@ -5,6 +5,19 @@ from utils import Deseq
 from utils import heatmap
 from utils import ploty_vp as vp
 
+
+# '''
+#     This file is controller that connect deseq and plotly classes to deseq router.
+# '''
+#
+# '''
+#     params :
+#         * locations - array of strings. each string is path to relevent file
+#             locations[0] - count matrix path
+#             locations[1] - design matrix
+#     The function use Deseq to run deseq analysis.
+# '''
+
 def run_deseq_controller(locations):
     count_matrix_path = locations[0]
     design_matrix_path = locations[1]
@@ -28,30 +41,58 @@ def run_deseq_controller(locations):
         deseq.get_deseq_result()
     except:
         raise UnicornException(name="Bad request", status_code=404,
-                               details='Some error occured. Check you design matrix file.')
+                               details='Error in Deseq analysis. please check your files.')
     return deseq
 
+# '''
+#     The functions create volcano plot useing plotly express and return json of the plot.
+#     params :
+#         * json_data - json contains all data to plot.
+#             * x_th,y_th - float, x/y column threshold
+#             * x_column / y_column - string, x/y column name
+#             * x_operation/ y_operation - string, which operation to do on data Log/None.
+#         * locations - path to files
+#             locations[0] - data path
+#             locations[1] - output_path
+# '''
+
 def deseq_volcano_controller(json_data,locations):
-    data_path = locations[0]
-    output_path = locations[1]
-    x_th = json_data['x_th']
-    x_column =json_data['x_column']
-    x_operation = json_data['x_operation']
-    y_th = json_data['y_th']
-    y_column = json_data['y_column']
-    y_operation = json_data['y_operation']
-    title="deseq volcano plot "
-    data =pd.read_csv(data_path)
-    volcano_plot = vp.volcano_plot(data, x_th=x_th, y_th=y_th, x_operation=x_operation, y_operation = y_operation,
+    try:
+        data_path = locations[0]
+        output_path = locations[1]
+        x_th = json_data['x_th']
+        x_column =json_data['x_column']
+        x_operation = json_data['x_operation']
+        y_th = json_data['y_th']
+        y_column = json_data['y_column']
+        y_operation = json_data['y_operation']
+        title="deseq volcano plot "
+        data =pd.read_csv(data_path)
+        volcano_plot = vp.volcano_plot(data, x_th=x_th, y_th=y_th, x_operation=x_operation, y_operation = y_operation,
                                        y_column = y_column,x_column = x_column,title=title)
-    json_fig = volcano_plot.create_volcano_plot()
-    data_dic = dict(json_data)
-    with open(output_path, 'w') as outfile:
-        json.dump(data_dic, outfile)
-    return json_fig
+        json_fig = volcano_plot.create_volcano_plot()
+        data_dic = dict(json_data)
+        with open(output_path, 'w') as outfile:
+            json.dump(data_dic, outfile)
+        return json_fig
+    except Exception as exc:
+        raise UnicornException(name="Bad request", status_code=404,
+                               details='Error in Deseq analysis. please check your files.')
 
+# '''
+#     This function filter heatmap by deseq results.
+#     The function returns json heatmap, plot heatmap.
+#     params:
+#         * deseq_path - string path to deseq result file
+#         * heatmap_path - string path to heatmap file
+#         * plot_path - string path to plot file
+#         * properties_path - file to heatmap properties
+#         * side - int which side of heatmap
+#         * values - array, which values contains in the heatmap
+#         * filtered_heatmap_path - path to save the filterd heatmap
+# '''
 
-def filter_heatmap_controller(deseq_path,heatmap_path,plot_path,properties_path,side,values,filtered_heatmap_path,uuid):
+def filter_heatmap_controller(deseq_path,heatmap_path,plot_path,properties_path,side,values,filtered_heatmap_path):
     deseq_result = pd.read_csv(deseq_path,encoding='utf-8-sig')
     with open(plot_path) as json_file:
         plot_settings = json.load(json_file)
@@ -62,9 +103,11 @@ def filter_heatmap_controller(deseq_path,heatmap_path,plot_path,properties_path,
     y_column = plot_settings['y_column']
     y_operation = plot_settings['y_operation']
     title="deseq volcano plot "
+    # create volcano plot instance
     volcano_plot = vp.volcano_plot(deseq_result,x_th=x_th, y_th=y_th, x_operation=x_operation, y_operation = y_operation,
                                        y_column = y_column,x_column = x_column,title=title)
     deseq_result.dropna(inplace=True)
+    # create label to rows which will be used to filter the data
     deseq_result = volcano_plot.add_color_by_condition()
 
     values = values.split(',')
@@ -72,6 +115,7 @@ def filter_heatmap_controller(deseq_path,heatmap_path,plot_path,properties_path,
     if len(values)>=3 or len(values) <=0:
         raise UnicornException(name="Filter dataframe", status_code=404,
                                details=f'The number of filters is not legal, number of filters is {len(values)}')
+    # filter data
     boolean_series = deseq_result.color.isin(values)
     deseq_result = deseq_result[boolean_series]
     volcano_plot.data = deseq_result
@@ -82,12 +126,14 @@ def filter_heatmap_controller(deseq_path,heatmap_path,plot_path,properties_path,
     if heatmap_df.empty:
         raise UnicornException(name="Empty dataframe", status_code=404,
                                details='After filtering the data, the file is empty. Please try filter settings')
+    # saved filterd data
     heatmap_df.to_csv(filtered_heatmap_path, index=False)
     heatmap_json = create_heat_map(properties_path,side,filtered_heatmap_path)
+    # create new volcano plot which filtered data
     json_fig = volcano_plot.create_volcano_plot()
     return {"plot":json_fig, "heatmap": heatmap_json}
 
-
+# create new heatmap - filterd heatmap
 def create_heat_map(properties_path,side,filtered_heatmap_path):
     with open(properties_path) as json_file:
         properties = json.load(json_file)
@@ -126,7 +172,8 @@ def create_heat_map(properties_path,side,filtered_heatmap_path):
                                           properties=new_properties)
     return heatmap_res
 
-def deseq_normalization(path_data):
+# normalize data which deseq
+def deseq_normalization(path_data,save=True):
     data = pd.read_csv(path_data)
     columns = data.columns.tolist()
     if columns.count('id') == 0:
@@ -143,6 +190,7 @@ def deseq_normalization(path_data):
     deseq.run_deseq()
     deseq.get_deseq_result()
     data = deseq.normalized_count_matrix
-    data.to_csv(path_data,index=False)
+    if save:
+        data.to_csv(path_data,index=False)
 
 

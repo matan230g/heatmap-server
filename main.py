@@ -1,11 +1,10 @@
-from fastapi import FastAPI
-from routers import actions
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI, HTTPException,Request
-from fastapi.responses import JSONResponse,PlainTextResponse
-from routers import actions,deseq_router, Unicorn_Exception
-from routers.Unicorn_Exception import UnicornException
+from fastapi import FastAPI,Request
+from fastapi.responses import JSONResponse
+from routers import actions,deseq_router
 import uvicorn
+
+
 app = FastAPI()
 
 
@@ -29,6 +28,7 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"]
 )
+
 @app.exception_handler(Exception)
 async def unicorn_exception_handler(request: Request,exc: Exception):
     exception_class = exc.__class__.__name__

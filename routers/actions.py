@@ -1,9 +1,7 @@
 from typing import List
-from pydantic import BaseModel
 from controller import deseq_controller
 from routers.Unicorn_Exception import UnicornException
-from fastapi import APIRouter,Header,HTTPException,FastAPI, File, UploadFile,Response,Request
-import json
+from fastapi import APIRouter,HTTPException, File, UploadFile,Response,Request
 import pandas as pd
 import datetime
 import shutil
@@ -11,8 +9,6 @@ import json
 import uuid
 from utils import heatmap
 import os
-from shutil import copyfile
-from itertools import chain
 from distutils.dir_util import copy_tree
 
 router = APIRouter()
@@ -269,7 +265,6 @@ def get_targets(properties,uuid):
                     map_target[conn]=map_target[conn]+1
                 else:
                     map_target[conn] = 1
-
     if properties['action'] == 'union':    
         return targets
     else:

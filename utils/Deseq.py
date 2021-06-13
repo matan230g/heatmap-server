@@ -35,6 +35,14 @@ class py_DESeq2:
                 performs action on the data in one of the axes
         """
 
+
+    '''
+    params :
+        * count_matrix - pandas datafrme
+        * design_matrix - pandas datafrme
+        * conditions - array of strings
+        * gene_column - string (column name in count_matrix)
+    '''
     def __init__(self, count_matrix, design_matrix, conditions, gene_column='id'):
         self.dds = None
         self.deseq_result = None
@@ -56,7 +64,6 @@ class py_DESeq2:
             design_matrix[col] = as_factor(design_matrix[col])
             design_formula = design_formula + col + " +"
         design_formula = design_formula[:-2]
-        # design_formula ="~ gender + type + gender : type"
         # create R dataframe, and create formula that is important for correct result of the DESeq analysis
         self.design_matrix = pandas2ri.py2rpy(design_matrix)
         self.design_formula = Formula(design_formula)

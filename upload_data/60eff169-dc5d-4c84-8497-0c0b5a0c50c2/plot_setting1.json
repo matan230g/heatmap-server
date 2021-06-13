@@ -1,1 +1,0 @@
-{"x_column": "log2FoldChange", "x_th": "1", "x_operation": "None", "y_column": "pvalue", "y_th": "0.05", "y_operation": "Log", "side": "1"}

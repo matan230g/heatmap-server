@@ -51,6 +51,10 @@ class volcano_plot :
         self.volcno_plot = None
         self.result= None
 
+    '''
+        Create json file contains all plot data.
+        The json can be used to draw plot in client side.
+    '''
     def create_volcano_plot(self):
         # remove na values from the data
         self.data.dropna(inplace=True)
